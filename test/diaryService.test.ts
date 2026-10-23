@@ -110,3 +110,72 @@ test("moves a diary without overwriting an existing destination", async () => {
 	expect(await new DiaryService(target).fileExists()).toBe(true);
 	await expect(diary.moveTo(target)).rejects.toThrow("already exists");
 });
+
+test("moves A to B and back while reusing identical encrypted backups", async () => {
+	const target = await mkdtemp(path.join(os.tmpdir(), "dayleaf-return-"));
+	try {
+		const diary = new DiaryService(directory);
+		await diary.create(password);
+		await diary.save({
+			indexDate: "2026-10-22",
+			entry: { title: "标题", text: "正文", dateUpdated: "now" },
+		});
+		await diary.moveTo(target);
+		await diary.moveTo(directory);
+		expect(diary.getDirectory()).toBe(directory);
+		await expect(new DiaryService(directory).read(password)).resolves.toMatchObject({
+			entries: { "2026-10-22": { text: "正文" } },
+		});
+		await expect(fs.access(path.join(target, "mini-diary.txt"))).rejects.toMatchObject({
+			code: "ENOENT",
+		});
+	} finally {
+		await rm(target, { recursive: true, force: true });
+	}
+});
+
+test("preserves different backups with matching names during migration", async () => {
+	const target = await mkdtemp(path.join(os.tmpdir(), "dayleaf-collision-"));
+	try {
+		const diary = new DiaryService(directory);
+		await diary.create(password);
+		await diary.backup();
+		const [name] = await diary.listBackups();
+		await mkdir(path.join(target, ".dayleaf-backups"));
+		await fs.writeFile(path.join(target, ".dayleaf-backups", name), "existing backup");
+		await diary.moveTo(target);
+		const names = await diary.listBackups();
+		expect(names.length).toBeGreaterThan(1);
+		expect(await readFile(path.join(target, ".dayleaf-backups", name), "utf8")).toBe(
+			"existing backup",
+		);
+	} finally {
+		await rm(target, { recursive: true, force: true });
+	}
+});
+
+test("failed migration removes its own new files and can be retried", async () => {
+	const target = await mkdtemp(path.join(os.tmpdir(), "dayleaf-retry-"));
+	const originalCopy = fs.copyFile.bind(fs);
+	try {
+		const diary = new DiaryService(directory);
+		await diary.create(password);
+		await diary.backup();
+		await diary.backup();
+		let copies = 0;
+		const spy = jest.spyOn(fs, "copyFile").mockImplementation(async (...args) => {
+			copies += 1;
+			if (copies === 3) throw Object.assign(Error("copy failed"), { code: "EIO" });
+			return originalCopy(...args);
+		});
+		await expect(diary.moveTo(target)).rejects.toThrow("copy failed");
+		spy.mockRestore();
+		expect(await diary.fileExists()).toBe(true);
+		expect(await fs.readdir(path.join(target, ".dayleaf-backups"))).toEqual([]);
+		await diary.moveTo(target);
+		expect(await diary.fileExists()).toBe(true);
+	} finally {
+		jest.restoreAllMocks();
+		await rm(target, { recursive: true, force: true });
+	}
+});

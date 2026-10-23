@@ -9,6 +9,7 @@ import {
 	CHECK_LIST,
 	CODE,
 	ElementTransformer,
+	TextMatchTransformer,
 	HEADING,
 	INLINE_CODE,
 	ITALIC_STAR,
@@ -26,6 +27,24 @@ import {
 	HorizontalRuleNode,
 } from "@lexical/react/LexicalHorizontalRuleNode";
 import { Klass, LexicalNode } from "lexical";
+
+import {
+	ImageNode,
+	$createImageNode,
+	$isImageNode,
+} from "../components/elements/editor/editor/ImageNode";
+
+const IMAGE: TextMatchTransformer = {
+	dependencies: [ImageNode],
+	export: (node) => ($isImageNode(node) ? node.getMarkdown() : null),
+	importRegExp: /!\[((?:\\.|[^\]\\])*)\]\(([^)\s]+)\)/,
+	regExp: /!\[((?:\\.|[^\]\\])*)\]\(([^)\s]+)\)$/,
+	replace: (node, match) => {
+		node.replace($createImageNode(match[2], match[1].replace(/\\([[\]\\])/g, "$1")));
+	},
+	trigger: ")",
+	type: "text-match",
+};
 
 const HORIZONTAL_RULE: ElementTransformer = {
 	dependencies: [HorizontalRuleNode],
@@ -53,10 +72,12 @@ export const MARKDOWN_TRANSFORMERS = [
 	ITALIC_STAR,
 	ITALIC_UNDERSCORE,
 	STRIKETHROUGH,
+	IMAGE,
 	LINK,
 ];
 
 export const MARKDOWN_NODES: Array<Klass<LexicalNode>> = [
+	ImageNode,
 	HeadingNode,
 	QuoteNode,
 	ListNode,

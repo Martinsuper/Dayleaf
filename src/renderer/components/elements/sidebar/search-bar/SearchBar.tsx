@@ -65,7 +65,7 @@ export default class SearchBar extends PureComponent<Props, State> {
 					<input
 						type="search"
 						className="search-input"
-						placeholder={`${translations.search}…`}
+						placeholder={translations["search-diary"]}
 						aria-label={translations.search}
 						spellCheck={false}
 						value={newSearchKey}

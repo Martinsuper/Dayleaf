@@ -2,7 +2,7 @@ import { Moment } from "moment-timezone";
 import React, { PureComponent, ReactNode } from "react";
 import { DayPicker } from "react-day-picker";
 
-import { calendarLocale } from "../../../../utils/i18n";
+import { calendarLocale, translations } from "../../../../utils/i18n";
 import { Entries, Weekday } from "../../../../types";
 import { createDate, parseDate } from "../../../../utils/dateFormat";
 import CalendarNavContainer from "../calendar-nav/CalendarNavContainer";
@@ -56,7 +56,8 @@ export default class Calendar extends PureComponent<Props, {}> {
 	};
 
 	render(): ReactNode {
-		const { allowFutureEntries, dateSelected, entries, firstDayOfWeek } = this.props;
+		const { allowFutureEntries, dateSelected, entries, firstDayOfWeek, setDateSelected } =
+			this.props;
 		const daysWithEntries = Object.keys(entries).map((indexDate) => parseDate(indexDate).toDate());
 		return (
 			<>
@@ -75,6 +76,13 @@ export default class Calendar extends PureComponent<Props, {}> {
 					selected={dateSelected.toDate()}
 					weekStartsOn={firstDayOfWeek ?? undefined}
 				/>
+				<button
+					type="button"
+					className="calendar-today-button"
+					onClick={() => setDateSelected(createDate())}
+				>
+					{translations.today}
+				</button>
 			</>
 		);
 	}

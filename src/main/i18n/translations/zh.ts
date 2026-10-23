@@ -1,6 +1,13 @@
 import { Translations } from "../../../shared/types";
 
 const translationsZh: Partial<Translations> = {
+	"search-diary": "搜索日记",
+	"more-formatting": "更多格式",
+	checklist: "任务清单",
+	"date-label": "日期",
+	"year-label": "年份",
+	"month-label": "月份",
+
 	// Menu (defined by macOS)
 	"about-app": "关于{appName}",
 	"bring-all-to-front": "全部置顶",

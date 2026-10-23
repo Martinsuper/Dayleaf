@@ -56,3 +56,11 @@ describe("Markdown editor conversion", () => {
 		expect(roundTrip("An **unfinished thought")).toBe("An \\*\\*unfinished thought");
 	});
 });
+
+test("images remain image nodes and surrounding text survives rich conversion", () => {
+	const image = "![我的\\[图片\\].png](data:image/png;base64,AAAA)";
+	const output = roundTrip(`前文 ${image} 后文`);
+	expect(output).toContain(image);
+	expect(output).toContain("前文");
+	expect(output).toContain("后文");
+});

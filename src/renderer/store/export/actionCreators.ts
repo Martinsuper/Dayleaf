@@ -73,7 +73,7 @@ export const exportToPdf =
 		dispatch(setExportInProgress());
 		try {
 			await flushPersistence();
-			const markdown = await convertToMd(getState().file.entries);
+			const markdown = await convertToMd(getState().file.entries, false);
 			await window.miniDiary.dialogs.exportPdf(
 				`dayleaf-export.${fileExtensions.pdf}`,
 				translations.export,

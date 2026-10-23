@@ -73,7 +73,7 @@ export default class DiaryService {
 	private lastBackup = 0;
 
 	constructor(directory = app.getPath("userData")) {
-		this.directory = directory;
+		this.directory = path.resolve(directory);
 	}
 
 	getDirectory(): string {
@@ -99,20 +99,45 @@ export default class DiaryService {
 		}
 		// Exclusive copy also works across volumes and never replaces another diary.
 		await fs.copyFile(this.filePath(), destination, constants.COPYFILE_EXCL);
+		const createdBackups: string[] = [];
 		try {
 			await fs.chmod(destination, 0o600);
+			const original = await fs.readFile(this.filePath());
+			if (!(await fs.readFile(destination)).equals(original))
+				throw Error("Diary copy verification failed");
 			const backupDirectory = path.join(directory, ".dayleaf-backups");
 			await fs.mkdir(backupDirectory, { recursive: true, mode: 0o700 });
 			for (const name of await this.listBackups()) {
-				await fs.copyFile(
-					path.join(this.directory, ".dayleaf-backups", name),
-					path.join(backupDirectory, name),
-					constants.COPYFILE_EXCL,
-				);
+				const source = path.join(this.directory, ".dayleaf-backups", name);
+				const content = await fs.readFile(source);
+				let target = path.join(backupDirectory, name);
+				let backupReady = false;
+				while (!backupReady) {
+					try {
+						await fs.copyFile(source, target, constants.COPYFILE_EXCL);
+						createdBackups.push(target);
+						await fs.chmod(target, 0o600);
+						if (!(await fs.readFile(target)).equals(content))
+							throw Error("Backup copy verification failed");
+						backupReady = true;
+					} catch (error) {
+						if (error.code !== "EEXIST") throw error;
+						if ((await fs.readFile(target)).equals(content)) {
+							backupReady = true;
+						} else {
+							target = path.join(
+								backupDirectory,
+								`${name.split("-")[0]}-${crypto.randomBytes(8).toString("hex")}.txt`,
+							);
+						}
+					}
+				}
 			}
 			await fs.unlink(this.filePath());
 		} catch (error) {
-			await fs.rm(destination, { force: true });
+			await Promise.all(
+				[destination, ...createdBackups].map((file) => fs.rm(file, { force: true })),
+			);
 			throw error;
 		}
 		this.directory = directory;

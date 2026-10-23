@@ -1,6 +1,13 @@
 import { Translations } from "../../../shared/types";
 
 const translationsZhTw: Partial<Translations> = {
+	"search-diary": "搜尋日記",
+	"more-formatting": "更多格式",
+	checklist: "待辦清單",
+	"date-label": "日期",
+	"year-label": "年份",
+	"month-label": "月份",
+
 	// Menu (defined by macOS)
 	"about-app": "關於{appName}",
 	"bring-all-to-front": "將此程式所有視窗移至最前",

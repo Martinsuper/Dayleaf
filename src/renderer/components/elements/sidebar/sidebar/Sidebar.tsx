@@ -1,3 +1,4 @@
+import { IconCircleCheck, IconClock, IconLoader2, IconAlertCircle } from "@tabler/icons-react";
 import React, { ReactElement, useState } from "react";
 import { translations } from "../../../../utils/i18n";
 import { retryPersistence, useSaveState } from "../../../../utils/persistence";
@@ -11,8 +12,18 @@ export interface StateProps {
 export default function Sidebar({ searchKey }: StateProps): ReactElement {
 	const state = useSaveState();
 	const [calendarOpen, setCalendarOpen] = useState(false);
+	const SaveIcon = {
+		saved: IconCircleCheck,
+		error: IconAlertCircle,
+		saving: IconLoader2,
+		dirty: IconClock,
+	}[state];
 	return (
 		<div className="sidebar">
+			<div className="app-brand sidebar-brand">
+				<span>日笺</span>
+				<small>Dayleaf</small>
+			</div>
 			<SearchBarContainer />
 			{searchKey === "" ? (
 				<>
@@ -36,7 +47,7 @@ export default function Sidebar({ searchKey }: StateProps): ReactElement {
 				<SearchResultsContainer />
 			)}
 			<footer className={`sidebar-save-state save-${state}`} role="status">
-				<span />
+				<SaveIcon aria-hidden="true" className={state === "saving" ? "save-spinner" : undefined} />
 				{state === "saved" ? translations["saved-automatically"] : translations[`save-${state}`]}
 				{state === "error" && (
 					<button

@@ -125,10 +125,6 @@ export default class App extends Component<Props, State> {
 						<div className={`app-window ${showDiaryChrome ? "has-diary-chrome" : ""}`}>
 							{showDiaryChrome && (
 								<header className="app-titlebar" onDoubleClick={toggleWindowSize}>
-									<div className="app-brand">
-										<span>日笺</span>
-										<small>Dayleaf</small>
-									</div>
 									<div className="app-titlebar-actions">
 										<button
 											type="button"

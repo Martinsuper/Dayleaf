@@ -64,13 +64,14 @@ test("shows help, closes it outside, and exposes the Markdown preference", async
 
 	await popover.locator("strong").click();
 	await expect(popover).toBeVisible();
-	await page.locator(".editor-scrollable").click({ position: { x: 20, y: 20 } });
+	await page.locator(".editor-scrollable").click({ position: { x: 20, y: 80 } });
 	await expect(popover).toHaveCount(0);
 
 	await helpButton.click();
 	await expect(popover).toBeVisible();
 	await page.locator(".app-icon-button").click();
 	await expect(popover).toHaveCount(0);
+	await page.getByRole("tab", { name: "Edit", exact: true }).click();
 	await expect(page.locator("#enable-markdown-shortcuts")).toBeChecked();
 	await page.locator("#enable-markdown-shortcuts").uncheck();
 	await expect(page.locator("#enable-markdown-shortcuts")).not.toBeChecked();
@@ -103,6 +104,10 @@ test("imports and exports Dayleaf Markdown", async (): Promise<void> => {
 	await page.locator(".import-overlay .button-main").click();
 	await expect(page.locator(".import-overlay")).toHaveCount(0);
 	await expect(page.locator('[role="grid"]')).toBeVisible();
+	await page.locator(".month-selector").click();
+	await page.getByRole("combobox", { name: "Year", exact: true }).selectOption("2026");
+	await page.getByRole("combobox", { name: "Month", exact: true }).selectOption("8");
+	await page.locator(".month-selector").click();
 	const importedDateButton = page.getByRole("button", { name: /Saturday, September 12th, 2026/ });
 	await expect(importedDateButton).toBeEnabled();
 	await importedDateButton.click();
@@ -123,4 +128,23 @@ test("imports and exports Dayleaf Markdown", async (): Promise<void> => {
 	await expect
 		.poll(async () => readFile(exportFile, "utf8").catch(() => ""))
 		.toContain("A **Markdown** import.");
+	// Reimport the newly generated marked archive through the real IPC/file path.
+	await app.evaluate(({ dialog }, filePath) => {
+		Object.defineProperty(dialog, "showOpenDialog", {
+			configurable: true,
+			value: async () => ({ canceled: false, filePaths: [filePath] }),
+		});
+		Object.defineProperty(dialog, "showMessageBox", {
+			configurable: true,
+			value: async () => ({ response: 1 }),
+		});
+	}, exportFile);
+	await app.evaluate(({ BrowserWindow }) =>
+		BrowserWindow.getAllWindows()[0].webContents.send("importMdMiniDiary"),
+	);
+	await page.locator(".import-overlay .button-main").click();
+	await expect(page.locator(".import-overlay")).toHaveCount(0);
+	await expect(page.locator(".editor-title-input")).toHaveText("Imported");
+	await expect(page.locator(".lexical-content-editable strong")).toHaveText("Markdown");
+	await expect(page.locator(".lexical-content-editable")).not.toContainText("dayleaf-entry:");
 });

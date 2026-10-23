@@ -25,7 +25,7 @@ import React, {
 import { markDirty, registerDraft } from "../../../../utils/persistence";
 import { Entries, IndexDate, MarkdownEditorMode } from "../../../../types";
 import { toIndexDate, toLocaleWeekday } from "../../../../utils/dateFormat";
-import { translations } from "../../../../utils/i18n";
+import { lang, translations } from "../../../../utils/i18n";
 import {
 	escapeMarkdownText,
 	MARKDOWN_NODES,
@@ -33,6 +33,7 @@ import {
 	normalizeMarkdown,
 } from "../../../../utils/markdown";
 import MarkdownPreview from "./MarkdownPreview";
+import { containsUnsupportedMarkdown } from "../../../../utils/markdownExtras";
 import ExternalEntryPlugin from "./ExternalEntryPlugin";
 import EditorToolbar from "../editor-toolbar/editor-toolbar/EditorToolbar";
 import ChecklistShortcutPlugin from "./ChecklistShortcutPlugin";
@@ -62,10 +63,6 @@ interface BodyEditorProps {
 	enableMarkdownShortcuts: boolean;
 	onChange: (text: string) => void;
 	spellCheck: boolean;
-}
-
-function containsUnsupportedMarkdown(markdown: string): boolean {
-	return /(^|\n)\s*\|.+\|\s*(\n|$)|!\[[^\]]*\]\([^)]*\)|\$\$|```(?:mermaid|math)/i.test(markdown);
 }
 
 function BodyEditor({
@@ -131,7 +128,9 @@ export default function Editor(props: Props): ReactElement {
 			: entry?.text ?? "";
 	const [title, setTitle] = useState(entry?.title ?? "");
 	const [text, setText] = useState(entryText);
+	const unsupportedMarkdown = useMemo(() => containsUnsupportedMarkdown(text), [text]);
 	const titleRef = useRef<HTMLDivElement | null>(null);
+	const sourceRef = useRef<HTMLTextAreaElement | null>(null);
 	const latestTitleRef = useRef(title);
 	latestTitleRef.current = title;
 	const setTitleElement = useCallback((element: HTMLDivElement | null): void => {
@@ -210,11 +209,19 @@ export default function Editor(props: Props): ReactElement {
 		saveEntry(title, nextText);
 	};
 	const insertMarkdown = (markdown: string): void => {
-		const nextText = normalizeMarkdown(`${text}${text ? "\n\n" : ""}${markdown}`);
+		const source = sourceRef.current;
+		const start = source?.selectionStart ?? text.length;
+		const end = source?.selectionEnd ?? start;
+		const nextText = `${text.slice(0, start)}${markdown}${text.slice(end)}`;
 		setText(nextText);
+		markDirty();
 		saveEntry(title, nextText);
 		saveEntry.flush();
 		if (markdownEditorMode !== "source") updateMarkdownEditorMode("source");
+		requestAnimationFrame(() => {
+			sourceRef.current?.focus();
+			sourceRef.current?.setSelectionRange(start + markdown.length, start + markdown.length);
+		});
 	};
 	const setMode = (mode: MarkdownEditorMode): void => {
 		saveEntry.flush();
@@ -225,6 +232,7 @@ export default function Editor(props: Props): ReactElement {
 			return (
 				<textarea
 					className="markdown-source"
+					ref={sourceRef}
 					aria-label={translations["markdown-source"]}
 					placeholder={`${translations["write-something"]}…`}
 					spellCheck={false}
@@ -234,7 +242,7 @@ export default function Editor(props: Props): ReactElement {
 				/>
 			);
 		}
-		if (containsUnsupportedMarkdown(text)) {
+		if (unsupportedMarkdown) {
 			return <MarkdownPreview text={text} />;
 		}
 		return (
@@ -256,7 +264,11 @@ export default function Editor(props: Props): ReactElement {
 		<LexicalComposer initialConfig={initialConfig} key={`${indexDate}-${markdownEditorMode}`}>
 			<form className="editor">
 				<div className="editor-scrollable">
-					<p className="text-faded">{toLocaleWeekday(dateSelected)}</p>
+					<p className="text-faded editor-date">
+						{lang.startsWith("zh")
+							? `${dateSelected.format("LL")} · ${dateSelected.format("dddd")}`
+							: toLocaleWeekday(dateSelected)}
+					</p>
 					{!hideTitles && (
 						<div className="editor-title-wrapper">
 							<div
@@ -273,7 +285,7 @@ export default function Editor(props: Props): ReactElement {
 							/>
 						</div>
 					)}
-					{containsUnsupportedMarkdown(text) && markdownEditorMode === "rich" && (
+					{unsupportedMarkdown && markdownEditorMode === "rich" && (
 						<p className="markdown-warning" role="status">
 							{translations["preview-readonly"]}
 							{markdownEditorMode === "rich" && (
@@ -286,7 +298,7 @@ export default function Editor(props: Props): ReactElement {
 					<div className="editor-text-wrapper">{createBody()}</div>
 				</div>
 				<EditorToolbar
-					readOnly={containsUnsupportedMarkdown(text)}
+					readOnly={unsupportedMarkdown}
 					markdown={text}
 					mode={markdownEditorMode}
 					onInsertMarkdown={insertMarkdown}

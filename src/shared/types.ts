@@ -13,6 +13,11 @@ export type OverlayType = "none" | "go-to-date" | "import" | "preferences" | "st
 // I18n
 
 export interface Translations {
+	"more-formatting": string;
+	"search-diary": string;
+	"date-label": string;
+	"year-label": string;
+	"month-label": string;
 	// Menu (defined by macOS)
 	"about-app": string;
 	"bring-all-to-front": string;

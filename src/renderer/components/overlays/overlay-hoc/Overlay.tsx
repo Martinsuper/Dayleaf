@@ -34,13 +34,14 @@ export default class Overlay extends PureComponent<Props, {}> {
 		const heading = this.overlayElement.querySelector("h1");
 		if (heading) heading.id = "overlay-heading";
 		this.releaseFocus = trapDialogFocus(this.overlayElement, this.onClose);
-		document.addEventListener("click", this.onClick);
+		// Capture ignores the opening click, whose capture phase has already completed.
+		document.addEventListener("click", this.onClick, true);
 		window.addEventListener("keydown", this.onKeyDown);
 	}
 
 	componentWillUnmount(): void {
 		this.releaseFocus?.();
-		document.removeEventListener("click", this.onClick);
+		document.removeEventListener("click", this.onClick, true);
 		window.removeEventListener("keydown", this.onKeyDown);
 	}
 

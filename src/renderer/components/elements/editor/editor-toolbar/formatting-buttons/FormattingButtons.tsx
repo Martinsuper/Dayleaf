@@ -33,6 +33,7 @@ import {
 	IconListNumbers,
 	IconMinus,
 	IconStrikethrough,
+	IconDots,
 } from "@tabler/icons-react";
 import React, { ReactElement, useEffect, useRef, useState } from "react";
 
@@ -74,6 +75,9 @@ function readFormatState(
 export default function FormattingButtons(): ReactElement {
 	const [editor] = useLexicalComposerContext();
 	const [linkOpen, setLinkOpen] = useState(false);
+	const [moreOpen, setMoreOpen] = useState(false);
+	const moreRef = useRef<HTMLDivElement>(null);
+	const moreSelection = useRef<BaseSelection | null>(null);
 	const linkSelection = useRef<BaseSelection | null>(null);
 	const [formatState, setFormatState] = useState<FormatState>({
 		isBold: false,
@@ -94,6 +98,64 @@ export default function FormattingButtons(): ReactElement {
 			),
 		[editor],
 	);
+
+	useEffect(() => {
+		if (!moreOpen) return undefined;
+		moreRef.current?.querySelector<HTMLButtonElement>(".formatting-more-popover button")?.focus();
+		const outside = (event: MouseEvent): void => {
+			if (!moreRef.current?.contains(event.target as Node)) setMoreOpen(false);
+		};
+		const escape = (event: KeyboardEvent): void => {
+			if (event.key !== "Escape") return;
+			event.preventDefault();
+			event.stopPropagation();
+			setMoreOpen(false);
+			moreRef.current?.querySelector<HTMLButtonElement>(":scope > button")?.focus();
+		};
+		document.addEventListener("mousedown", outside);
+		document.addEventListener("keydown", escape, true);
+		return () => {
+			document.removeEventListener("mousedown", outside);
+			document.removeEventListener("keydown", escape, true);
+		};
+	}, [moreOpen]);
+	const applyMore = (action: () => void): void => {
+		editor.update(() => {
+			$setSelection(moreSelection.current);
+			action();
+		});
+		setMoreOpen(false);
+		editor.focus();
+	};
+	const extraActions = [
+		{
+			label: translations.strikethrough,
+			Icon: IconStrikethrough,
+			active: formatState.isStrikethrough,
+			action: () => editor.dispatchCommand(FORMAT_TEXT_COMMAND, "strikethrough"),
+		},
+		{
+			label: translations["inline-code"],
+			Icon: IconCode,
+			active: formatState.isCode,
+			action: () => editor.dispatchCommand(FORMAT_TEXT_COMMAND, "code"),
+		},
+		{
+			label: translations["horizontal-rule"],
+			Icon: IconMinus,
+			action: () => editor.dispatchCommand(INSERT_HORIZONTAL_RULE_COMMAND, undefined),
+		},
+		{
+			label: translations.checklist,
+			Icon: IconChecklist,
+			action: () => editor.dispatchCommand(INSERT_CHECK_LIST_COMMAND, undefined),
+		},
+		{
+			label: translations.list,
+			Icon: IconListNumbers,
+			action: () => editor.dispatchCommand(INSERT_ORDERED_LIST_COMMAND, undefined),
+		},
+	];
 
 	const formatText = (format: "bold" | "italic" | "code" | "strikethrough"): void => {
 		editor.dispatchCommand(FORMAT_TEXT_COMMAND, format);
@@ -169,28 +231,6 @@ export default function FormattingButtons(): ReactElement {
 				>
 					<IconItalic {...iconProps} stroke={STROKE_WIDTH} />
 				</button>
-				<button
-					type="button"
-					className={`button button-invisible text-format-button ${
-						formatState.isStrikethrough ? "button-active" : ""
-					}`}
-					aria-label={translations.strikethrough}
-					aria-pressed={formatState.isStrikethrough}
-					title={translations.strikethrough}
-					onClick={(): void => formatText("strikethrough")}
-				>
-					<IconStrikethrough {...iconProps} stroke={STROKE_WIDTH} />
-				</button>
-				<button
-					type="button"
-					className={`button button-invisible ${formatState.isCode ? "button-active" : ""}`}
-					aria-label={translations["inline-code"]}
-					aria-pressed={formatState.isCode}
-					title={translations["inline-code"]}
-					onClick={(): void => formatText("code")}
-				>
-					<IconCode {...iconProps} stroke={STROKE_WIDTH} />
-				</button>
 			</div>
 			<div className="toolbar-group toolbar-insert-group">
 				<button
@@ -202,30 +242,8 @@ export default function FormattingButtons(): ReactElement {
 				>
 					<IconLink {...iconProps} stroke={STROKE_WIDTH} />
 				</button>
-				<button
-					type="button"
-					className="button button-invisible"
-					aria-label={translations["horizontal-rule"]}
-					title={translations["horizontal-rule"]}
-					onClick={(): void => {
-						editor.dispatchCommand(INSERT_HORIZONTAL_RULE_COMMAND, undefined);
-					}}
-				>
-					<IconMinus {...iconProps} stroke={STROKE_WIDTH} />
-				</button>
 			</div>
 			<div className="toolbar-group toolbar-list-group">
-				<button
-					type="button"
-					className="button button-invisible"
-					aria-label={translations.checklist}
-					title={translations.checklist}
-					onClick={(): void => {
-						editor.dispatchCommand(INSERT_CHECK_LIST_COMMAND, undefined);
-					}}
-				>
-					<IconChecklist {...iconProps} stroke={STROKE_WIDTH} />
-				</button>
 				<button
 					type="button"
 					className="button button-invisible"
@@ -237,17 +255,54 @@ export default function FormattingButtons(): ReactElement {
 				>
 					<IconList {...iconProps} stroke={STROKE_WIDTH} />
 				</button>
+			</div>
+			<div
+				className="formatting-more"
+				role="group"
+				aria-label={translations["more-formatting"]}
+				ref={moreRef}
+				onBlur={(event) => {
+					if (event.relatedTarget && !event.currentTarget.contains(event.relatedTarget as Node))
+						setMoreOpen(false);
+				}}
+			>
 				<button
 					type="button"
-					className="button button-invisible"
-					aria-label={translations.list}
-					title={translations.list}
-					onClick={(): void => {
-						editor.dispatchCommand(INSERT_ORDERED_LIST_COMMAND, undefined);
+					className={`button button-invisible ${moreOpen ? "button-active" : ""}`}
+					aria-label={translations["more-formatting"]}
+					title={translations["more-formatting"]}
+					aria-expanded={moreOpen}
+					aria-controls="formatting-more-actions"
+					onClick={() => {
+						editor.getEditorState().read(() => {
+							moreSelection.current = $getSelection()?.clone() ?? null;
+						});
+						setMoreOpen(!moreOpen);
 					}}
 				>
-					<IconListNumbers {...iconProps} stroke={STROKE_WIDTH} />
+					<IconDots {...iconProps} stroke={STROKE_WIDTH} />
 				</button>
+				{moreOpen && (
+					<div
+						className="formatting-more-popover"
+						id="formatting-more-actions"
+						role="group"
+						aria-label={translations["more-formatting"]}
+					>
+						{extraActions.map(({ label, Icon, active, action }) => (
+							<button
+								key={label}
+								type="button"
+								className={`button button-invisible ${active ? "button-active" : ""}`}
+								aria-pressed={active}
+								onClick={() => applyMore(action)}
+							>
+								<Icon {...iconProps} stroke={STROKE_WIDTH} />
+								<span>{label}</span>
+							</button>
+						))}
+					</div>
+				)}
 			</div>
 		</div>
 	);

@@ -66,7 +66,7 @@ test("keeps header and search icons fully visible", async (): Promise<void> => {
 		searchWrapper.y + searchWrapper.height,
 	);
 	expect(searchWrapper.width).toBe(sidebar.width - 41);
-	expect(page.locator(".calendar-today-button")).toHaveCount(0);
+	await expect(page.locator(".calendar-today-button")).toBeVisible();
 	expect(settingsIcon.x).toBeGreaterThanOrEqual(settingsButton.x);
 	expect(settingsIcon.y).toBeGreaterThanOrEqual(settingsButton.y);
 	expect(settingsIcon.x + settingsIcon.width).toBeLessThanOrEqual(
@@ -81,16 +81,16 @@ test("keeps header and search icons fully visible", async (): Promise<void> => {
 	});
 });
 
-test("shows the today action only away from today", async (): Promise<void> => {
+test("keeps the today action available for returning to today", async (): Promise<void> => {
 	await page.locator(".calendar-nav-row > button").first().click();
 	const todayButton = page.locator(".calendar-today-button");
 	await expect(todayButton).toBeVisible();
 	await expect(todayButton).toHaveText(/今天|Today/);
 	await todayButton.click();
-	await expect(todayButton).toHaveCount(0);
+	await expect(todayButton).toBeVisible();
 });
 
-test("preserves the legacy sidebar and editor geometry", async (): Promise<void> => {
+test("preserves the paper sidebar and floating editor geometry", async (): Promise<void> => {
 	const sidebar = await box(".sidebar");
 	const editor = await box(".editor");
 	const search = await box(".search-input-wrapper");
@@ -116,16 +116,18 @@ test("preserves the legacy sidebar and editor geometry", async (): Promise<void>
 		};
 	});
 
-	expect(sidebar.width).toBe(288);
+	expect(sidebar.width).toBe(264);
 	expect(editor.x).toBe(sidebar.x + sidebar.width);
-	expect(search.height).toBe(36);
+	expect(search.height).toBe(44);
 	expect(calendar.width).toBeLessThanOrEqual(sidebar.width - 40);
 	expect(title.width).toBe(content.width);
 	expect(content.y).toBeGreaterThan(title.y + title.height);
-	expect(toolbar.height).toBe(56);
-	expect(toolbar.y).toBe(editor.y + editor.height - toolbar.height - 24);
-	expect(day.width).toBe(34);
-	expect(day.height).toBe(34);
+	expect(toolbar.height).toBe(58);
+	expect(toolbar.y + toolbar.height).toBeLessThanOrEqual(editor.y + editor.height - 20);
+	expect(toolbar.x).toBeGreaterThan(editor.x);
+	expect(toolbar.x + toolbar.width).toBeLessThanOrEqual(editor.x + editor.width);
+	expect(day.width).toBe(32);
+	expect(day.height).toBe(36);
 	expect(titleStyles.border).toBe("none");
 	expect(titleStyles.shadow).toBe("none");
 	expect(titleStyles.background).toBe("rgba(0, 0, 0, 0)");
@@ -156,8 +158,8 @@ test("aligns formatting controls to a uniform grid", async (): Promise<void> => 
 	);
 	const iconBoxes = await Promise.all((await icons.all()).map((icon) => icon.boundingBox()));
 
-	expect(buttonBoxes.length).toBeGreaterThanOrEqual(8);
-	expect(iconBoxes.length).toBeGreaterThanOrEqual(7);
+	expect(buttonBoxes.length).toBeGreaterThanOrEqual(5);
+	expect(iconBoxes.length).toBeGreaterThanOrEqual(5);
 	const toolbarBox = await box(".editor-toolbar");
 	for (const button of buttonBoxes) {
 		expect(button).not.toBeNull();
@@ -168,8 +170,8 @@ test("aligns formatting controls to a uniform grid", async (): Promise<void> => 
 	}
 	for (const icon of iconBoxes) {
 		expect(icon).not.toBeNull();
-		expect(icon?.width).toBe(18);
-		expect(icon?.height).toBe(18);
+		expect(icon?.width).toBe(20);
+		expect(icon?.height).toBe(20);
 	}
 	const toolbar = page.locator(".formatting-buttons");
 	expect((await toolbar.boundingBox())?.height).toBe(36);

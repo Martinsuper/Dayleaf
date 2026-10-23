@@ -7,6 +7,7 @@ import settings from "electron-settings";
 import { IPC, PreferenceValues } from "../../shared/ipc";
 import { getTranslations, getUsedLang } from "../i18n/i18n";
 import DiaryService from "../services/diaryService";
+import { prepareImportedImage } from "../services/imageImport";
 import { getWindow } from "../window";
 
 const defaults: PreferenceValues = {
@@ -170,9 +171,9 @@ export default function initIpcListeners(diary: DiaryService): void {
 						: "Images must be smaller than 10 MB. Please resize the image first.",
 				);
 			const extension = filePath.split(".").pop()?.toLowerCase() || "png";
-			const mime = extension === "jpg" ? "jpeg" : extension;
+			const image = prepareImportedImage(await fs.readFile(filePath), extension);
 			return {
-				dataUrl: `data:image/${mime};base64,${(await fs.readFile(filePath)).toString("base64")}`,
+				dataUrl: `data:image/${image.mime};base64,${image.content.toString("base64")}`,
 				name: filePath.split(/[\\/]/).pop() || "image",
 			};
 		},

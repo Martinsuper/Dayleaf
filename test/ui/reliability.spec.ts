@@ -291,10 +291,153 @@ test("successful replacement updates the rich editor and can be recovered", asyn
 	await expect(page.locator(".import-overlay")).toHaveCount(0);
 	await expect(page.locator(".lexical-content-editable")).toHaveText("替换后的正文");
 	await page.locator(".app-icon-button").click();
+	await page.getByRole("tab", { name: "数据", exact: true }).click();
 	await page.locator(".backup-recovery select").selectOption({ index: 1 });
 	await page.locator(".backup-recovery input").fill(password);
 	await page.locator(".backup-recovery button").click();
 	await page.locator(".password-prompt-form input").fill(password);
 	await page.locator(".password-prompt-form button").click();
 	await expect(page.locator(".lexical-content-editable")).toHaveText("恢复前的原文");
+});
+
+test("settings categories keep navigation visible and support keyboard selection", async () => {
+	await page.setViewportSize({ width: 500, height: 500 });
+	await page.locator(".app-icon-button").click();
+	await page.getByRole("tab", { name: "数据", exact: true }).click();
+	await expect(page.locator(".backup-recovery")).toBeVisible();
+	await page.getByRole("tabpanel").evaluate((element) => element.parentElement?.scrollTo(0, 1000));
+	const width = await page
+		.locator(".preferences-form")
+		.evaluate((element) => ({ content: element.scrollWidth, visible: element.clientWidth }));
+	expect(width.content).toBe(width.visible);
+	await expect(page.getByRole("tab", { name: "外观", exact: true })).toBeInViewport();
+	await expect(page.getByRole("button", { name: "关闭", exact: true })).toBeInViewport();
+	await page.screenshot({ path: "audit-2026-10-22/fixed-settings.png" });
+	await page.getByRole("tab", { name: "数据", exact: true }).press("ArrowRight");
+	await expect(page.getByRole("tab", { name: "安全", exact: true })).toBeFocused();
+	await expect(page.getByRole("tab", { name: "安全", exact: true })).toHaveAttribute(
+		"aria-selected",
+		"true",
+	);
+	await expect(page.getByPlaceholder("新密码", { exact: true })).toBeVisible();
+});
+
+test("literal dollars in code remain rich-editable", async () => {
+	await page.locator(".editor-mode-switch button").last().click();
+	await page.locator(".markdown-source").fill('前文\n\n```js\nconst price = "$$";\n```\n\n后文');
+	await page.locator(".editor-mode-switch button").first().click();
+	await expect(page.locator(".lexical-content-editable")).toBeVisible();
+	await expect(page.locator(".markdown-warning")).toHaveCount(0);
+	await expect(page.locator(".lexical-code-block")).toContainText('const price = "$$";');
+});
+
+test("image insertion uses the caret and keeps rich text editable after restart", async () => {
+	await app.evaluate(({ ipcMain }) => {
+		ipcMain.removeHandler("dialogs:import-image");
+		ipcMain.handle("dialogs:import-image", () => ({
+			name: "测试.png",
+			dataUrl:
+				"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jF1sAAAAASUVORK5CYII=",
+		}));
+	});
+	const editor = page.locator(".lexical-content-editable");
+	await editor.fill("前文后文");
+	await editor.press("Home");
+	await editor.press("ArrowRight");
+	await editor.press("ArrowRight");
+	await page.getByRole("button", { name: "插入图片", exact: true }).click();
+	await expect(editor.locator("img")).toHaveCount(1);
+	await expect(page.locator(".markdown-warning")).toHaveCount(0);
+	await page.keyboard.type("继续写作");
+	await page.locator(".editor-mode-switch button").last().click();
+	await expect(page.locator(".markdown-source")).toHaveValue(
+		/前文!\[测试\.png\]\(data:image\/png;base64,[^)]+\) 继续写作后文/,
+	);
+	await page.locator(".editor-mode-switch button").first().click();
+	await expect(editor.locator("img")).toHaveCount(1);
+	await expect(page.locator(".sidebar-save-state")).toHaveClass(/save-saved/);
+	child.kill("SIGKILL");
+	await new Promise<void>((resolve) => child.once("exit", () => resolve()));
+	await launch();
+	await page.locator(".password-prompt-form input").fill(password);
+	await page.locator(".password-prompt-form button").click();
+	await expect(page.locator(".lexical-content-editable img")).toHaveCount(1);
+	await expect(page.locator(".lexical-content-editable")).toContainText("继续写作后文");
+});
+
+test("source image insertion preserves text on both sides of selection", async () => {
+	await app.evaluate(({ ipcMain }) => {
+		ipcMain.removeHandler("dialogs:import-image");
+		ipcMain.handle("dialogs:import-image", () => ({
+			name: "图片.png",
+			dataUrl: "data:image/png;base64,AAAA",
+		}));
+	});
+	await page.locator(".editor-mode-switch button").last().click();
+	const source = page.locator(".markdown-source");
+	await source.fill("前文后文");
+	await source.press("Home");
+	await source.press("ArrowRight");
+	await source.press("ArrowRight");
+	await page.getByRole("button", { name: "插入图片", exact: true }).click();
+	await expect(source).toHaveValue("前文![图片.png](data:image/png;base64,AAAA)后文");
+});
+
+test("large photo import reduces dimensions before embedding", async () => {
+	const fixture = path.join(directory, "large-photo.jpg");
+	const encoded = await app.evaluate(({ nativeImage }) => {
+		const pixels = Buffer.alloc(3000 * 1800 * 4);
+		for (let index = 0; index < pixels.length; index += 4) {
+			pixels[index] = index % 251;
+			pixels[index + 1] = Math.floor(index / 128) % 251;
+			pixels[index + 2] = 100;
+			pixels[index + 3] = 255;
+		}
+		const original = nativeImage.createFromBitmap(pixels, { width: 3000, height: 1800 });
+		return original.toJPEG(95).toString("base64");
+	});
+	await import("fs/promises").then(({ writeFile }) =>
+		writeFile(fixture, Buffer.from(encoded, "base64")),
+	);
+	await app.evaluate(({ dialog }, target) => {
+		Object.defineProperty(dialog, "showOpenDialog", {
+			configurable: true,
+			value: async () => ({ canceled: false, filePaths: [target] }),
+		});
+	}, fixture);
+	await page.locator(".lexical-content-editable").fill("照片记录");
+	await page.getByRole("button", { name: "插入图片", exact: true }).click();
+	const image = page.locator(".lexical-content-editable img");
+	await expect(image).toHaveCount(1);
+	await expect
+		.poll(() => image.evaluate((element: HTMLImageElement) => element.naturalWidth))
+		.toBe(2560);
+	await expect
+		.poll(() => image.evaluate((element: HTMLImageElement) => element.naturalHeight))
+		.toBe(1536);
+});
+
+test("more formatting preserves the selection and supports keyboard dismissal", async () => {
+	const editor = page.locator(".lexical-content-editable");
+	await editor.fill("保留选区");
+	await editor.press("ControlOrMeta+A");
+	await page.getByRole("button", { name: "更多格式", exact: true }).click();
+	await expect(page.getByRole("button", { name: "删除线", exact: true })).toBeFocused();
+	await page.getByRole("button", { name: "删除线", exact: true }).press("Enter");
+	await expect(editor.locator(".lexical-text-strikethrough")).toHaveText("保留选区");
+	await expect(page.locator(".formatting-more-popover")).toHaveCount(0);
+	await page.getByRole("button", { name: "更多格式", exact: true }).click();
+	await page.getByRole("button", { name: "删除线", exact: true }).press("Escape");
+	await expect(page.getByRole("button", { name: "更多格式", exact: true })).toBeFocused();
+	await expect(page.locator(".formatting-more-popover")).toHaveCount(0);
+});
+
+test("settings can be reopened without the opening click dismissing the dialog", async () => {
+	for (let attempt = 0; attempt < 3; attempt += 1) {
+		await page.locator(".app-icon-button").click();
+		await expect(page.getByRole("dialog")).toBeVisible();
+		await expect(page.getByRole("tab", { name: "外观", exact: true })).toBeVisible();
+		await page.getByRole("dialog").press("Escape");
+		await expect(page.getByRole("dialog")).toHaveCount(0);
+	}
 });

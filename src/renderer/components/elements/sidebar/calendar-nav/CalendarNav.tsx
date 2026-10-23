@@ -105,7 +105,7 @@ export default function CalendarNav(props: Props): ReactElement {
 					{selectorOpen && (
 						<div className="month-selector-popover">
 							<select
-								aria-label={translations["go-to-date"]}
+								aria-label={translations["year-label"]}
 								value={dateSelected.year()}
 								onChange={onYearSelection}
 							>
@@ -116,7 +116,7 @@ export default function CalendarNav(props: Props): ReactElement {
 								))}
 							</select>
 							<select
-								aria-label={translations["next-month"]}
+								aria-label={translations["month-label"]}
 								value={dateSelected.month()}
 								onChange={onMonthSelection}
 							>
@@ -140,15 +140,6 @@ export default function CalendarNav(props: Props): ReactElement {
 					<NextIcon {...iconProps} />
 				</button>
 			</div>
-			{!dateSelected.isSame(today, "day") && (
-				<button
-					type="button"
-					className="calendar-today-button"
-					onClick={() => setDateSelected(today)}
-				>
-					{translations.today}
-				</button>
-			)}
 		</div>
 	);
 }

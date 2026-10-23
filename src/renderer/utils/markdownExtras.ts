@@ -69,3 +69,15 @@ export function parseMarkdownTable(markdown: string): MarkdownTable | null {
 export function renderMarkdownPreview(markdown: string): string {
 	return parser.render(markdown);
 }
+
+/** Use parsed blocks so code, inline code, escaped punctuation and literal pipes stay editable. */
+export function containsUnsupportedMarkdown(markdown: string): boolean {
+	return parser
+		.parse(markdown, {})
+		.some(
+			(token) =>
+				token.type === "table_open" ||
+				token.type === "math" ||
+				(token.type === "fence" && /^(mermaid|math)(?:\s|$)/i.test(token.info.trim())),
+		);
+}

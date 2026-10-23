@@ -52,7 +52,7 @@ export default function GoToDateOverlay(props: Props): ReactElement {
 			<form onSubmit={onSubmit}>
 				<h1>{translations["go-to-date"]}</h1>
 				<label htmlFor="input-go-to-date">
-					Date:
+					{translations["date-label"]}:
 					<input
 						type="date"
 						id="input-go-to-date"

@@ -994,3 +994,91 @@ a:focus-visible {
 		padding: 28px 22px;
 	}
 }
+
+// Keep preference navigation and dismissal available while the active panel scrolls.
+.pref-overlay {
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+	.overlay-content {
+		display: flex;
+		flex-direction: column;
+		box-sizing: border-box;
+		min-height: 0;
+		max-height: inherit;
+	}
+	.overlay-close-button {
+		z-index: 2;
+	}
+	.pref-header {
+		flex: 0 0 auto;
+		padding-right: 20px;
+	}
+	.pref-tabs {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 6px;
+	}
+	.preferences-form {
+		min-height: 0;
+		overflow-y: auto;
+		overscroll-behavior: contain;
+	}
+	[role="tabpanel"] {
+		padding: 4px;
+	}
+}
+
+// Wrap complete control groups instead of hiding commands in a horizontal scroller.
+.editor-toolbar {
+	flex-wrap: wrap;
+	height: auto;
+	min-height: 56px;
+	padding: 8px 12px !important;
+	.formatting-buttons {
+		flex: 1 1 460px;
+		flex-wrap: wrap;
+		height: auto;
+		overflow: visible;
+	}
+	.editor-toolbar-end {
+		margin-left: auto;
+	}
+}
+.editor-image {
+	display: inline-block;
+	max-width: 100%;
+	vertical-align: middle;
+}
+.editor-image img {
+	display: block;
+	max-width: 100%;
+	max-height: 600px;
+	object-fit: contain;
+}
+
+.pref-overlay {
+	.preferences-form {
+		width: 100%;
+	}
+	[role="tabpanel"],
+	fieldset,
+	.fieldset-content {
+		min-width: 0;
+	}
+	fieldset {
+		box-sizing: border-box;
+	}
+	input,
+	select {
+		box-sizing: border-box;
+		min-width: 0;
+		max-width: 100%;
+	}
+	.file-dir {
+		overflow-wrap: anywhere;
+	}
+	.form-group {
+		margin-right: 0;
+	}
+}

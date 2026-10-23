@@ -1,0 +1,588 @@
+// The selected “留白书页” visual system. Shared tokens keep secondary screens coherent.
+.theme-light {
+	--ui-bg: #fafbf8;
+	--ui-surface: #fafbf8;
+	--ui-sidebar: #f0f3ef;
+	--ui-text: #20282e;
+	--ui-muted: #737d80;
+	--ui-border: #dfe5df;
+	--ui-accent: #577568;
+	--ui-accent-fill: #6b8779;
+	--ui-accent-hover: #4c6a5c;
+	--ui-accent-soft: #e3eae3;
+	--ui-hover: #e7ede6;
+	--ui-focus-ring: #bdcfc0;
+	--ui-success: #577568;
+}
+.theme-dark {
+	--ui-bg: #202622;
+	--ui-surface: #202622;
+	--ui-sidebar: #1a211d;
+	--ui-text: #e2e9e2;
+	--ui-muted: #a5b1a9;
+	--ui-border: #354239;
+	--ui-accent: #b1cbb9;
+	--ui-accent-fill: #597766;
+	--ui-accent-hover: #486654;
+	--ui-accent-soft: #303f35;
+	--ui-hover: #2d3b32;
+	--ui-focus-ring: #779c83;
+	--ui-success: #b1cbb9;
+}
+.app {
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB",
+		sans-serif;
+}
+.app-window {
+	position: relative;
+}
+.has-diary-chrome {
+	--sidebar-width: clamp(264px, 22.9vw, 328px);
+	.app-titlebar {
+		position: absolute;
+		top: 0;
+		right: 0;
+		z-index: 5;
+		justify-content: flex-end;
+		height: 44px;
+		padding: 0 20px;
+		background: transparent;
+		border: 0;
+		pointer-events: none;
+	}
+	.app-titlebar-actions {
+		pointer-events: auto;
+	}
+	.app-icon-button {
+		width: 36px;
+		height: 36px;
+		border-radius: 10px;
+	}
+}
+.diary {
+	background: var(--ui-bg);
+}
+.diary .sidebar {
+	flex: 0 0 var(--sidebar-width);
+	width: var(--sidebar-width);
+	padding: 58px 24px 28px;
+	background: var(--ui-sidebar);
+	border-color: var(--ui-border);
+}
+.sidebar .sidebar-brand {
+	flex: 0 0 auto;
+	gap: 14px;
+	margin-bottom: 32px;
+	padding-left: 16px;
+	font-weight: 650;
+	font-size: 24px;
+	line-height: 32px;
+	small {
+		padding-left: 14px;
+		font-size: 16px;
+	}
+}
+.view-selector {
+	flex-shrink: 0;
+	margin-bottom: 32px;
+}
+.search-input-wrapper {
+	height: 44px;
+	background: transparent;
+	border-color: var(--ui-border);
+	border-radius: 10px;
+}
+.search-input {
+	height: 42px;
+	padding-left: 43px;
+	font-size: 15px;
+}
+.search-input-icon {
+	left: 12px;
+	width: 19px;
+	height: 19px;
+}
+.calendar-nav {
+	margin-bottom: 22px;
+}
+.calendar-nav-row {
+	height: 40px;
+}
+.month-selector {
+	font-weight: 600;
+	font-size: 19px;
+}
+.DayPicker-WeekdaysRow,
+.DayPicker-Weekday {
+	height: 28px;
+}
+.DayPicker-Weekday {
+	font-size: 14px;
+}
+.DayPicker-Day {
+	height: 44px;
+}
+.DayPicker-DayButton {
+	width: 38px;
+	height: 38px;
+	font-size: 16px;
+	border-radius: 9px;
+}
+.theme-light .DayPicker-Day--selected .DayPicker-DayButton,
+.theme-dark .DayPicker-Day--selected .DayPicker-DayButton {
+	background: var(--ui-accent-fill) !important;
+}
+.DayPicker-Day--today:not(.DayPicker-Day--selected) {
+	border-color: transparent;
+}
+.DayPicker-Day--today:not(.DayPicker-Day--selected) .DayPicker-DayButton {
+	box-shadow: inset 0 0 0 1px var(--ui-accent);
+}
+.calendar-today-button {
+	display: block;
+	width: 100px;
+	min-height: 36px;
+	margin: 32px auto 0;
+	padding: 0 16px;
+	font-size: 15px;
+	line-height: 36px;
+	background: var(--ui-accent-soft);
+	border-radius: 12px;
+}
+.sidebar-save-state {
+	flex-shrink: 0;
+	gap: 10px;
+	margin-bottom: 14px;
+	padding-top: 24px;
+	font-size: 14px;
+	line-height: 22px;
+	svg {
+		flex: 0 0 20px;
+		width: 20px;
+		height: 20px;
+		stroke-width: 1.6;
+	}
+	&.save-error {
+		color: var(--ui-error);
+	}
+	&.save-dirty,
+	&.save-saving {
+		color: var(--ui-warning);
+	}
+}
+.save-spinner {
+	animation: save-spin 1s linear infinite;
+}
+@keyframes save-spin {
+	to {
+		transform: rotate(360deg);
+	}
+}
+.diary .editor {
+	position: relative;
+	padding: 0;
+	background: var(--ui-bg) !important;
+}
+.editor-scrollable {
+	padding: 140px clamp(44px, 7vw, 100px) 136px !important;
+	background: transparent !important;
+	border: 0;
+	border-radius: 0;
+}
+.editor-scrollable .text-faded,
+.editor-title-wrapper,
+.editor-text-wrapper,
+.markdown-warning {
+	width: min(100%, 820px);
+}
+.editor-scrollable .editor-date {
+	flex-shrink: 0;
+	margin-bottom: 32px;
+	font-weight: 450;
+	font-size: 17px;
+	line-height: 24px;
+}
+.editor-title-wrapper {
+	margin-bottom: 48px;
+	font-weight: 650;
+	font-size: 44px;
+	line-height: 1.3;
+	letter-spacing: -1px;
+}
+.editor-text-wrapper {
+	font-size: 22px;
+	line-height: 1.9;
+}
+.lexical-content-editable > p {
+	margin-bottom: 2.7em;
+}
+.lexical-placeholder {
+	font-size: 20px;
+}
+.editor-toolbar-shell {
+	position: absolute;
+	right: 22px;
+	bottom: 28px;
+	left: 22px;
+	z-index: 3;
+	display: flex;
+	justify-content: center;
+	pointer-events: none;
+}
+.editor-toolbar-shell .editor-toolbar {
+	--toolbar-control-size: 32px;
+	--toolbar-icon-size: 18px;
+	flex: 0 1 auto;
+	flex-wrap: nowrap;
+	gap: 6px;
+	max-width: 100%;
+	min-height: 58px;
+	padding: 10px 14px !important;
+	background: var(--ui-surface) !important;
+	border: 1px solid var(--ui-border);
+	border-radius: 30px;
+	box-shadow: 0 5px 20px #20282e08 !important;
+	pointer-events: auto;
+	.formatting-buttons {
+		flex: 0 1 auto;
+		flex-wrap: nowrap;
+		gap: 4px;
+	}
+	.toolbar-group {
+		gap: 2px;
+	}
+	.toolbar-group + .toolbar-group {
+		margin-left: 0;
+		padding-left: 6px;
+	}
+	.toolbar-block-group {
+		grid-auto-columns: 78px;
+	}
+	.block-format-select {
+		height: 32px;
+		padding: 0 18px 0 8px;
+		font-size: 14px;
+		background: transparent !important;
+		border: 0 !important;
+	}
+	.editor-toolbar-end {
+		gap: 2px;
+		margin-left: 0;
+	}
+	.editor-mode-switch {
+		gap: 0;
+		padding-left: 6px;
+	}
+	.button {
+		border-radius: 8px;
+	}
+}
+.editor-word-count {
+	position: absolute;
+	right: 0;
+	bottom: 16px;
+	color: var(--ui-muted);
+}
+.editor-word-count .word-count {
+	font-size: 13px;
+}
+.formatting-more {
+	position: relative;
+}
+.formatting-more-popover {
+	position: absolute;
+	right: -8px;
+	bottom: calc(100% + 18px);
+	width: 210px;
+	padding: 6px;
+	background: var(--ui-surface);
+	border: 1px solid var(--ui-border);
+	border-radius: 14px;
+	box-shadow: 0 8px 26px #20282e14;
+}
+.editor-toolbar .formatting-more-popover .button {
+	flex: 0 0 auto;
+	gap: 10px;
+	justify-content: flex-start;
+	width: 100%;
+	min-width: 0;
+	height: 38px;
+	padding: 0 10px;
+	font-size: 14px;
+	line-height: 1.4;
+}
+.editor-toolbar .formatting-more-popover svg {
+	flex: 0 0 18px;
+}
+.markdown-help-popover {
+	border-radius: 14px;
+}
+.search-results {
+	flex: 1;
+	min-height: 0;
+}
+.search-result .button {
+	padding: 14px;
+	border-radius: 12px;
+}
+.overlay-inner {
+	border-radius: 18px;
+}
+.theme-light .button.button-main,
+.theme-dark .button.button-main {
+	border-radius: 9px;
+}
+.page-centered-inner {
+	border-radius: 20px;
+	box-shadow: 0 12px 42px #20282e0a;
+}
+.pref-tabs .button.button-invisible {
+	border-radius: 9px;
+}
+.pref-overlay input:not([type="checkbox"]):not([type="radio"]),
+.pref-overlay select {
+	border-radius: 8px !important;
+}
+
+@media (max-width: 1200px) and (min-width: 801px) {
+	.editor-scrollable {
+		padding: 110px 52px 140px !important;
+	}
+	.editor-title-wrapper {
+		font-size: 36px;
+	}
+	.editor-text-wrapper {
+		font-size: 18px;
+	}
+	.editor-word-count {
+		right: 12px;
+		bottom: -20px;
+	}
+	.diary .sidebar {
+		padding-right: 20px;
+		padding-left: 20px;
+	}
+	.DayPicker-DayButton {
+		width: 32px;
+		height: 36px;
+	}
+}
+@media (max-width: 800px) {
+	.has-diary-chrome .app-titlebar {
+		height: 44px;
+		padding-right: 14px;
+	}
+	.diary .sidebar {
+		flex: 0 0 auto;
+		width: 100%;
+		padding: 48px 20px 10px;
+	}
+	.sidebar .sidebar-brand {
+		margin-bottom: 16px;
+		padding-left: 0;
+		font-size: 22px;
+	}
+	.view-selector {
+		margin-bottom: 10px;
+	}
+	.calendar-toggle {
+		width: auto;
+		min-height: 32px;
+		margin-bottom: 0;
+		padding: 0 10px;
+		color: var(--ui-accent);
+		font-size: 13px;
+		background: transparent;
+		box-shadow: none;
+	}
+	.sidebar-calendar.is-open {
+		max-width: 320px;
+		margin: 12px auto;
+	}
+	.sidebar-save-state {
+		margin-top: 8px;
+		margin-bottom: 0;
+		padding-top: 8px;
+		font-size: 12px;
+	}
+	.sidebar-save-state svg {
+		width: 16px;
+		height: 16px;
+	}
+	.search-input-wrapper {
+		height: 40px;
+	}
+	.search-input {
+		height: 38px;
+	}
+	.editor-scrollable {
+		padding: 36px 28px 140px !important;
+	}
+	.editor-scrollable .editor-date {
+		margin-bottom: 20px;
+		font-size: 13px;
+	}
+	.editor-title-wrapper {
+		margin-bottom: 28px;
+		font-size: 30px;
+	}
+	.editor-text-wrapper {
+		font-size: 17px;
+	}
+	.lexical-content-editable > p {
+		margin-bottom: 1.5em;
+	}
+	.editor-toolbar-shell {
+		right: 16px;
+		bottom: 28px;
+		left: 16px;
+	}
+	.editor-toolbar-shell .editor-toolbar {
+		flex-wrap: wrap;
+		gap: 6px;
+		justify-content: center;
+		padding: 8px 10px !important;
+		border-radius: 20px;
+	}
+	.editor-toolbar-shell .editor-toolbar .formatting-buttons {
+		flex-wrap: wrap;
+	}
+	.editor-word-count {
+		right: 6px;
+		bottom: -22px;
+	}
+	.calendar-today-button {
+		margin-top: 16px;
+	}
+}
+@media (prefers-reduced-motion: reduce) {
+	.save-spinner {
+		animation: none;
+	}
+	.button {
+		transition: none;
+	}
+}
+
+.DayPicker-Day .DayPicker-DayButton {
+	width: 38px !important;
+	height: 38px !important;
+	font-size: 16px !important;
+	border-radius: 9px !important;
+}
+.theme-light .DayPicker-Day--disabled .DayPicker-DayButton,
+.theme-dark .DayPicker-Day--disabled .DayPicker-DayButton {
+	color: var(--ui-muted) !important;
+	opacity: 0.65;
+}
+@media (max-width: 1200px) and (min-width: 801px) {
+	.DayPicker-Day .DayPicker-DayButton {
+		width: 32px !important;
+		height: 36px !important;
+	}
+}
+
+@media (min-width: 1201px) {
+	.diary .sidebar {
+		padding-top: 54px;
+		padding-bottom: 38px;
+	}
+	.sidebar .sidebar-brand {
+		font-size: 26px;
+	}
+	.sidebar .sidebar-brand small {
+		font-size: 17px;
+	}
+	.month-selector {
+		font-size: 21px;
+	}
+	.editor-title-wrapper {
+		font-size: 52px;
+	}
+	.editor-text-wrapper {
+		font-size: 24px;
+	}
+	.lexical-content-editable > p {
+		margin-bottom: 2.4em;
+	}
+	.editor-scrollable .editor-date {
+		color: #879198;
+		font-weight: 400;
+	}
+	.editor-scrollable .text-faded,
+	.editor-title-wrapper,
+	.editor-text-wrapper,
+	.markdown-warning {
+		margin-left: 0;
+	}
+	.editor-toolbar-shell {
+		bottom: 44px;
+	}
+	.editor-toolbar-shell .editor-toolbar {
+		margin-right: 40px;
+	}
+}
+.editor-toolbar-shell .editor-toolbar {
+	--toolbar-control-size: 36px;
+	--toolbar-icon-size: 20px;
+	.toolbar-block-group {
+		grid-auto-columns: 90px;
+	}
+	.block-format-select {
+		height: 36px;
+		font-size: 16px;
+	}
+}
+@media (max-width: 800px) {
+	.diary .sidebar {
+		max-height: 48%;
+		overflow-y: auto;
+	}
+}
+
+.has-diary-chrome .app-titlebar {
+	pointer-events: auto;
+}
+.search-input-wrapper .search-input {
+	height: 42px !important;
+	padding-left: 46px !important;
+}
+@media (min-width: 1201px) {
+	.editor-scrollable .editor-date {
+		color: #879198 !important;
+	}
+	.DayPicker-Day .DayPicker-DayButton {
+		font-size: 17px !important;
+	}
+}
+@media (max-width: 800px) {
+	.search-input-wrapper .search-input {
+		height: 38px !important;
+	}
+	.editor-toolbar .markdown-help-popover {
+		position: fixed;
+		right: 20px;
+		bottom: 140px;
+		width: min(320px, calc(100vw - 40px));
+		max-height: calc(100vh - 200px);
+		overflow: auto;
+	}
+}
+
+.editor-title-input,
+.lexical-content-editable,
+.markdown-source {
+	caret-color: var(--ui-accent);
+}
+@media (max-width: 800px) {
+	.theme-light .calendar-toggle,
+	.theme-dark .calendar-toggle {
+		height: 32px;
+		padding: 0 10px;
+		color: var(--ui-accent);
+		line-height: 32px;
+		background: transparent;
+		border-radius: 8px;
+		box-shadow: none;
+	}
+}

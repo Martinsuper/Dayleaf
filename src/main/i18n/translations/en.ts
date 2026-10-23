@@ -1,6 +1,12 @@
 import { Translations } from "../../../shared/types";
 
 const translationsEn: Translations = {
+	"search-diary": "Search journals",
+	"more-formatting": "More formatting",
+	"date-label": "Date",
+	"year-label": "Year",
+	"month-label": "Month",
+
 	// Menu (defined by macOS)
 	"about-app": "About {appName}",
 	"bring-all-to-front": "Bring All to Front",

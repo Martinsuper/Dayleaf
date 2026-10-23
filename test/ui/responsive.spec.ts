@@ -62,15 +62,17 @@ test("keeps narrow layouts within the viewport", async (): Promise<void> => {
 test("allows every toolbar action to be reached on narrow screens", async (): Promise<void> => {
 	await page.setViewportSize({ width: 500, height: 600 });
 	const toolbar = page.locator(".formatting-buttons");
-	await page.locator(".formatting-buttons button").last().scrollIntoViewIfNeeded();
 	const scrolling = await toolbar.evaluate((element) => ({
-		left: element.scrollLeft,
 		range: element.scrollWidth - element.clientWidth,
 	}));
-	expect(scrolling.range).toBeGreaterThan(0);
-	expect(scrolling.left).toBeGreaterThan(0);
+	expect(scrolling.range).toBe(0);
+	for (const button of await page
+		.locator(".formatting-buttons button, .editor-toolbar-end button")
+		.all()) {
+		await expect(button).toBeInViewport();
+	}
 	await expect(page.locator(".editor-mode-switch button").last()).toBeInViewport();
-	await expect(page.locator(".formatting-buttons button").last()).toBeInViewport();
+	await page.screenshot({ path: "audit-2026-10-22/fixed-narrow-editor.png" });
 	const editor = await page.locator(".editor").boundingBox();
 	expect(editor!.x).toBeGreaterThanOrEqual(0);
 	expect(editor!.x + editor!.width).toBeLessThanOrEqual(500);
