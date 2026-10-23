@@ -3,7 +3,7 @@ import { calculateDiaryStats } from "../../../utils/diaryStats";
 
 import { getLang } from "../../../electron/ipcRenderer/senders";
 import { Entries } from "../../../types";
-import { translations } from "../../../utils/i18n";
+import { lang, translations } from "../../../utils/i18n";
 import OverlayContainer from "../overlay-hoc/OverlayContainer";
 
 const locale = getLang();
@@ -16,6 +16,7 @@ type Props = StateProps;
 
 interface Stats {
 	nrEntries: number;
+	nrDays: number;
 	avgEntriesPerWeek: number;
 	longestStreak: number;
 	currentStreak: number;
@@ -49,6 +50,12 @@ export default class StatsOverlay extends PureComponent<Props, {}> {
 				<h1>{translations.statistics}</h1>
 				<table>
 					<tbody>
+						<tr>
+							<td className="stat-number">{StatsOverlay.formatNum(stats.nrDays)}</td>
+							<td className="stat-label">
+								{lang.startsWith("zh") ? "记录天数" : "Days with entries"}
+							</td>
+						</tr>
 						<tr>
 							<td className="stat-number">{StatsOverlay.formatNum(stats.nrEntries)}</td>
 							<td className="stat-label">{translations["total-entries"]}</td>

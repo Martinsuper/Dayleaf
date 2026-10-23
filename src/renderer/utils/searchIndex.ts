@@ -2,10 +2,12 @@ import debounce from "lodash.debounce";
 import MiniSearch, { SearchResult } from "minisearch";
 
 import { DiaryEntry, Entries, IndexDate } from "../types";
+import { compareEntries } from "./entries";
 import mdToTxt from "./mdToTxt";
 
 interface IndexDoc {
 	indexDate: string;
+	entry: DiaryEntry;
 	title: string;
 	text: string;
 }
@@ -34,7 +36,7 @@ export function subscribeIndex(listener: () => void): () => void {
 const SPACE_OR_PUNCTUATION = /[^\p{L}\p{N}@#]+/u;
 
 async function createIndexDoc(indexDate: string, entry: DiaryEntry): Promise<IndexDoc> {
-	return { indexDate, text: await mdToTxt(entry.text), title: entry.title };
+	return { indexDate, entry, text: await mdToTxt(entry.text), title: entry.title };
 }
 
 function createSearchIndex(): MiniSearch {
@@ -166,7 +168,9 @@ export function searchIndex(key: string): string[] {
 	documents.forEach((doc) => {
 		if (`${doc.title}\n${doc.text}`.toLocaleLowerCase().includes(query)) matches.add(doc.indexDate);
 	});
-	return [...matches].sort().reverse();
+	return [...matches].sort((a, b) =>
+		compareEntries([b, documents.get(b)!.entry], [a, documents.get(a)!.entry]),
+	);
 }
 
 /** Reuse indexed plain text for snippets instead of exposing Markdown or image payloads. */

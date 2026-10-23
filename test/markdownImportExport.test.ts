@@ -22,8 +22,8 @@ test("exports and imports Dayleaf Markdown", async () => {
 
 test("imports one Markdown document into a selected day", () => {
 	const imported = parseSingleEntryMd("# My day\n\nA **good** day.", "2025-09-13");
-	expect(imported["2025-09-13"].title).toBe("My day");
-	expect(imported["2025-09-13"].text).toBe("A **good** day.");
+	expect(Object.values(imported)[0].title).toBe("My day");
+	expect(Object.values(imported)[0].text).toBe("A **good** day.");
 });
 
 test.each([
@@ -54,10 +54,9 @@ test("legacy Markdown ignores date headings inside code and preserves final rule
 	expect(parseMiniDiaryMd("## 2026-10-20\n\n# 只有标题")["2026-10-20"].title).toBe("只有标题");
 });
 
-test("rejects duplicate and invalid dates instead of overwriting entries", () => {
-	expect(() => parseMiniDiaryMd("## 2026-10-20\n\n正文\n\n---\n\n## 2026-10-20\n\n覆盖")).toThrow(
-		/Duplicate/,
-	);
+test("keeps same-day legacy articles separately and rejects invalid dates", () => {
+	const imported = parseMiniDiaryMd("## 2026-10-20\n\n正文\n\n---\n\n## 2026-10-20\n\n另一篇");
+	expect(Object.values(imported).map((entry) => entry.text)).toEqual(["正文", "另一篇"]);
 	expect(() => parseMiniDiaryMd("## 2026-02-30\n\n正文")).toThrow(/Invalid date/);
 });
 

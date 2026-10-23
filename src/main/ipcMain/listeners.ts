@@ -68,11 +68,11 @@ export default function initIpcListeners(diary: DiaryService): void {
 			type: "question",
 			title: chinese ? "导入冲突" : "Import conflicts",
 			message: chinese
-				? `新增 ${added} 篇，${dates.length} 个日期已有日记`
-				: `${added} new entries; ${dates.length} conflicting dates`,
+				? `新增 ${added} 篇，${dates.length} 篇日记已存在`
+				: `${added} new entries; ${dates.length} existing entries`,
 			detail: dates.join("\n"),
 			buttons: chinese
-				? ["跳过已有日期", "替换（保留加密备份）", "合并内容", "取消"]
+				? ["跳过已有篇目", "替换（保留加密备份）", "合并内容", "取消"]
 				: ["Skip existing", "Replace (with encrypted backup)", "Merge", "Cancel"],
 			defaultId: 0,
 			cancelId: 3,

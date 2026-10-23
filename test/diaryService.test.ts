@@ -179,3 +179,28 @@ test("failed migration removes its own new files and can be retried", async () =
 		await rm(target, { recursive: true, force: true });
 	}
 });
+
+test("legacy date keys and same-day article IDs survive encrypted saves and reopening", async () => {
+	const diary = new DiaryService(directory);
+	await diary.create(password);
+	await diary.save({
+		indexDate: "2026-10-23",
+		entry: { title: "Legacy", text: "Old text", dateUpdated: "2026-10-23T01:00:00Z" },
+	});
+	await diary.save({
+		indexDate: "independent-article",
+		entry: {
+			date: "2026-10-23",
+			dateCreated: "2026-10-23T02:00:00Z",
+			dateUpdated: "2026-10-23T02:00:00Z",
+			title: "Second",
+			text: "New text",
+		},
+	});
+	const reopened = new DiaryService(directory);
+	const { entries } = await reopened.read(password);
+	expect(Object.keys(entries)).toHaveLength(2);
+	expect(entries["2026-10-23"]).toMatchObject({ date: "2026-10-23", text: "Old text" });
+	expect(entries["2026-10-23"].dateCreated).toBeUndefined();
+	expect(entries["independent-article"].text).toBe("New text");
+});

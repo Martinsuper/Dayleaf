@@ -1,13 +1,14 @@
 import countWords from "word-count";
 import moment from "moment-timezone";
 import MarkdownIt from "markdown-it";
+import { entryDate } from "./entries";
 import { Entries } from "../types";
 
 const parser = new MarkdownIt();
 
-/** Count visible text, excluding image payloads, link destinations and Markdown punctuation. */
-export function countEntryWords(title: string, markdown: string): number {
-	const text = parser
+/** Visible content only: never expose image payloads or link destinations in previews. */
+export function visibleMarkdownText(markdown: string): string {
+	return parser
 		.parse(markdown, {})
 		.flatMap((token) => {
 			if (token.type === "fence" || token.type === "code_block") return [token.content];
@@ -16,12 +17,18 @@ export function countEntryWords(title: string, markdown: string): number {
 				.map((child) => child.content);
 		})
 		.join(" ");
-	return countWords(`${title}\n${text}`);
+}
+
+/** Count visible text, excluding image payloads, link destinations and Markdown punctuation. */
+export function countEntryWords(title: string, markdown: string): number {
+	return countWords(`${title}\n${visibleMarkdownText(markdown)}`);
 }
 
 /** Calculate streaks through today; future entries count toward totals but not streaks. */
 export function calculateDiaryStats(entries: Entries, now = moment()) {
-	const dates = Object.keys(entries).sort();
+	const allDates = Object.entries(entries).map(([id, entry]) => entryDate(id, entry));
+	const dates = [...new Set(allDates)].sort();
+	const count = allDates.length;
 	const elapsed = dates.filter((date) => moment(date, "YYYY-MM-DD").isSameOrBefore(now, "day"));
 	let streak = 0;
 	let longestStreak = 0;
@@ -42,11 +49,14 @@ export function calculateDiaryStats(entries: Entries, now = moment()) {
 		? Math.max(1, now.diff(moment(elapsed[0], "YYYY-MM-DD"), "weeks") + 1)
 		: 1;
 	return {
-		nrEntries: dates.length,
-		avgEntriesPerWeek: elapsed.length / weeks,
+		nrEntries: count,
+		nrDays: dates.length,
+		avgEntriesPerWeek:
+			allDates.filter((date) => moment(date, "YYYY-MM-DD").isSameOrBefore(now, "day")).length /
+			weeks,
 		longestStreak,
 		currentStreak,
 		nrWords,
-		avgWordsPerEntry: dates.length ? nrWords / dates.length : 0,
+		avgWordsPerEntry: count ? nrWords / count : 0,
 	};
 }

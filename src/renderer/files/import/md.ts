@@ -25,7 +25,8 @@ function validateDate(value: string): string {
 
 export function parseSingleEntryMd(markdown: string, indexDate: string): Entries {
 	return {
-		[indexDate]: {
+		[globalThis.crypto.randomUUID()]: {
+			date: validateDate(indexDate),
 			...splitTitle(markdown),
 			dateUpdated: createDate().toString(),
 			textFormat: "markdown",
@@ -53,7 +54,8 @@ function parseMarkedArchive(markdown: string, header: RegExpMatchArray): Entries
 		)
 			throw Error("Invalid Dayleaf Markdown metadata");
 		const date = validateDate(meta.date);
-		if (entries[date]) throw Error(`Duplicate diary date: ${date}`);
+		const id = typeof meta.id === "string" && meta.id ? meta.id : date;
+		if (entries[id]) throw Error(`Duplicate diary ID: ${id}`);
 		const prefixStart = cursor + start[0].length;
 		const bodyMarker = `<!-- dayleaf-body:${boundary} -->`;
 		const bodyMarkerStart = markdown.indexOf(bodyMarker, prefixStart);
@@ -74,12 +76,15 @@ function parseMarkedArchive(markdown: string, header: RegExpMatchArray): Entries
 		const originalTitle = meta.title
 			? `# ${escapeMarkdownText(meta.title).replace(/\r?\n/g, " ")}`
 			: "";
-		entries[date] = {
+		entries[id] = {
+			date,
+			...(typeof meta.dateCreated === "string" ? { dateCreated: meta.dateCreated } : {}),
 			title: shownTitle === originalTitle ? meta.title : splitTitle(shownTitle).title,
 			text: markdown.slice(textStart, textStart + end.index),
 			textFormat: meta.textFormat,
 			textFormatVersion: 1,
-			dateUpdated: createDate().toString(),
+			dateUpdated:
+				typeof meta.dateUpdated === "string" ? meta.dateUpdated : createDate().toString(),
 		};
 		cursor = textStart + end.index + end[0].length;
 		if (cursor < markdown.length) {
@@ -124,9 +129,10 @@ export function parseMiniDiaryMd(markdown: string): Entries {
 	if (!boundaries.length) throw Error("No Dayleaf date headings were found");
 	const entries: Entries = {};
 	boundaries.forEach((boundary, index) => {
-		if (entries[boundary.date]) throw Error(`Duplicate diary date: ${boundary.date}`);
+		const id = entries[boundary.date] ? globalThis.crypto.randomUUID() : boundary.date;
 		const end = boundaries[index + 1]?.separator ?? normalized.length;
-		entries[boundary.date] = {
+		entries[id] = {
+			date: boundary.date,
 			...splitTitle(normalized.slice(boundary.content, end)),
 			dateUpdated: createDate().toString(),
 			textFormat: "markdown",

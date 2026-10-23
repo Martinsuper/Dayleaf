@@ -1,13 +1,11 @@
-import { Moment } from "moment-timezone";
 import React, { ReactElement } from "react";
 import { countEntryWords } from "../../../../../utils/diaryStats";
 
 import { Entries } from "../../../../../types";
-import { toIndexDate } from "../../../../../utils/dateFormat";
 import { lang, translate } from "../../../../../utils/i18n";
 
 export interface StateProps {
-	dateSelected: Moment;
+	entryId: string;
 	entries: Entries;
 }
 
@@ -18,11 +16,9 @@ type Props = StateProps;
  * currently selected diary entry
  */
 export default function WordCount(props: Props): ReactElement {
-	const { dateSelected, entries } = props;
+	const { entryId: indexDate, entries } = props;
 
 	let wordCount = 0;
-
-	const indexDate = toIndexDate(dateSelected);
 
 	if (indexDate in entries) {
 		const entry = entries[indexDate];

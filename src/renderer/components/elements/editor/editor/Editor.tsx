@@ -23,8 +23,10 @@ import React, {
 } from "react";
 
 import { markDirty, registerDraft } from "../../../../utils/persistence";
-import { Entries, IndexDate, MarkdownEditorMode } from "../../../../types";
+import { Entries, MarkdownEditorMode } from "../../../../types";
 import { toIndexDate, toLocaleWeekday } from "../../../../utils/dateFormat";
+import { visibleMarkdownText } from "../../../../utils/diaryStats";
+import { entriesForDay } from "../../../../utils/entries";
 import { lang, translations } from "../../../../utils/i18n";
 import {
 	escapeMarkdownText,
@@ -49,10 +51,12 @@ export interface StateProps {
 	markdownEditorMode: MarkdownEditorMode;
 	dateSelected: Moment;
 	entries: Entries;
+	entryId: string;
 }
 
 export interface DispatchProps {
-	updateEntry: (entryDate: IndexDate, title: string, text: string) => void;
+	updateEntry: (id: string, title: string, text: string, date: string) => void;
+	selectEntry: (date: string, id: string) => void;
 	updateMarkdownEditorMode: (mode: MarkdownEditorMode) => void;
 }
 
@@ -112,6 +116,8 @@ function BodyEditor({
 export default function Editor(props: Props): ReactElement {
 	const {
 		dateSelected,
+		entryId,
+		selectEntry,
 		enableMarkdownShortcuts,
 		enableSpellcheck,
 		entries,
@@ -121,7 +127,11 @@ export default function Editor(props: Props): ReactElement {
 		updateMarkdownEditorMode,
 	} = props;
 	const indexDate = toIndexDate(dateSelected);
-	const entry = entries[indexDate];
+	const entry = entries[entryId];
+	const dayEntries = entriesForDay(entries, indexDate);
+	const isZh = lang.startsWith("zh");
+	const entryLabel = (index: number): string =>
+		isZh ? `第 ${index + 1} 篇` : `Entry ${index + 1}`;
 	const entryText =
 		entry?.textFormat === "plain"
 			? entry.text.split("\n").map(escapeMarkdownText).join("\n\n")
@@ -143,9 +153,9 @@ export default function Editor(props: Props): ReactElement {
 			debounce((nextTitle: string, nextText: string): void => {
 				// Preserve editor input exactly. Normalizing or trimming an active draft can
 				// change the rendered value and move the caret during an autosave.
-				updateEntry(indexDate, nextTitle, nextText.replace(/\r\n?/g, "\n"));
+				updateEntry(entryId, nextTitle, nextText.replace(/\r\n?/g, "\n"), indexDate);
 			}, AUTOSAVE_INTERVAL),
-		[indexDate, updateEntry],
+		[entryId, indexDate, updateEntry],
 	);
 	const initialConfig = useMemo(
 		() => ({
@@ -264,6 +274,63 @@ export default function Editor(props: Props): ReactElement {
 		<LexicalComposer initialConfig={initialConfig} key={`${indexDate}-${markdownEditorMode}`}>
 			<form className="editor">
 				<div className="editor-scrollable">
+					<div className="day-entries-bar">
+						<span className="text-faded">
+							{isZh ? `当天 ${dayEntries.length} 篇` : `${dayEntries.length} entries this day`}
+						</span>
+						<button
+							type="button"
+							className="button day-entry-new"
+							disabled={!entry}
+							onClick={(): void => {
+								saveEntry.flush();
+								selectEntry(indexDate, globalThis.crypto.randomUUID());
+							}}
+						>
+							{isZh ? "再写一篇" : "New entry"}
+						</button>
+					</div>
+					{(dayEntries.length > 1 || (!entry && dayEntries.length > 0)) && (
+						<nav
+							className="day-entries-list"
+							aria-label={isZh ? "当天日记" : "Entries for this day"}
+						>
+							{dayEntries.map(([id, item], index) => (
+								<button
+									type="button"
+									key={id}
+									className={`button day-entry-item ${id === entryId ? "is-selected" : ""}`}
+									aria-current={id === entryId ? "true" : undefined}
+									onClick={(): void => {
+										saveEntry.flush();
+										selectEntry(indexDate, id);
+									}}
+								>
+									<small>
+										{item.dateCreated
+											? new Date(item.dateCreated).toLocaleTimeString(lang, {
+													hour: "2-digit",
+													minute: "2-digit",
+											  })
+											: entryLabel(index)}
+									</small>
+									<span>
+										{item.title ||
+											(item.textFormat === "plain" ? item.text : visibleMarkdownText(item.text))
+												.replace(/\s+/g, " ")
+												.trim()
+												.slice(0, 48) ||
+											translations["no-title"]}
+									</span>
+								</button>
+							))}
+							{!entry && (
+								<span className="day-entry-draft">
+									{isZh ? "新篇 · 输入后自动保存" : "New entry · saved when you write"}
+								</span>
+							)}
+						</nav>
+					)}
 					<p className="text-faded editor-date">
 						{lang.startsWith("zh")
 							? `${dateSelected.format("LL")} · ${dateSelected.format("dddd")}`

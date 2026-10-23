@@ -1,3 +1,4 @@
+import { entryDate } from "../../utils/entries";
 import { Entries } from "../../types";
 import { fromIndexDate, toDayOneDate } from "../../utils/dateFormat";
 import mdToTxt from "../../utils/mdToTxt";
@@ -8,7 +9,8 @@ export async function convertToDayOneTxt(entries: Entries): Promise<string> {
 
 	for (const [indexDate, entry] of sortEntries(entries)) {
 		const { text, title } = entry;
-		content.push(`\tDate:\t${toDayOneDate(fromIndexDate(indexDate))}\n\n`);
+		const date = entryDate(indexDate, entry);
+		content.push(`\tDate:\t${toDayOneDate(fromIndexDate(date))}\n\n`);
 		if (title) {
 			content.push(`${title}\n\n`);
 		}

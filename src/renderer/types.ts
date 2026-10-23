@@ -2,9 +2,15 @@
 
 export type IndexDate = string;
 
+export type EntryId = string;
+
 export type TextFormat = "plain" | "markdown";
 
 export interface DiaryEntry {
+	/** Local calendar date. Missing only in legacy date-keyed files. */
+	date?: string;
+	/** Actual creation time; never inferred from a legacy modification time. */
+	dateCreated?: string;
 	dateUpdated: string;
 	title: string;
 	text: string;
@@ -12,7 +18,8 @@ export interface DiaryEntry {
 	textFormatVersion?: number;
 }
 
-export type Entries = Record<IndexDate, DiaryEntry>;
+/** Maps stable article IDs to content; legacy IDs happen to be dates. */
+export type Entries = Record<EntryId, DiaryEntry>;
 
 export interface MiniDiaryJson {
 	metadata: Metadata;

@@ -181,6 +181,10 @@ export default class DiaryService {
 		]);
 		const payload = JSON.parse(plaintext.toString("utf8")) as unknown;
 		if (!isDiaryPayload(payload)) throw Error("Diary file has an invalid payload");
+		Object.entries(payload.entries).forEach(([id, entry]) => {
+			if (!entry.date && /^\d{4}-\d{2}-\d{2}$/.test(id))
+				payload.entries[id] = { ...entry, date: id };
+		});
 		this.session = { entries: payload.entries, key, metadata: payload.metadata, salt };
 		return payload;
 	}

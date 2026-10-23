@@ -1,10 +1,12 @@
 import { Moment } from "moment-timezone";
 import { Action } from "redux";
+import { ClearFileStateAction } from "../file/types";
 
 // State
 
 export interface DiaryState {
 	dateSelected: Moment;
+	entrySelectedByDate: Record<string, string>;
 	searchKey: string;
 	searchResults: string[];
 }
@@ -38,4 +40,15 @@ export interface SetSearchResultsAction extends Action {
 	};
 }
 
-export type DiaryAction = SetDateSelectedAction | SetSearchKeyAction | SetSearchResultsAction;
+export const SET_ENTRY_SELECTED = "SET_ENTRY_SELECTED";
+export interface SetEntrySelectedAction extends Action {
+	type: typeof SET_ENTRY_SELECTED;
+	payload: { date: string; id: string };
+}
+
+export type DiaryAction =
+	| ClearFileStateAction
+	| SetEntrySelectedAction
+	| SetDateSelectedAction
+	| SetSearchKeyAction
+	| SetSearchResultsAction;

@@ -6,7 +6,6 @@ import {
 	ImportEntry,
 	JrnlEntry,
 	JrnlJson,
-	ListDiaryEntry,
 	MiniDiaryJson,
 } from "../../types";
 import { createDate, parseDate, toIndexDate } from "../../utils/dateFormat";
@@ -49,6 +48,7 @@ export function parseDayOneJson(jsonStr: string): Entries {
 			}
 
 			const entry = {
+				dateCreated: parseDate(creationDate).toISOString(),
 				dateUpdated,
 				title,
 				text,
@@ -95,36 +95,31 @@ export function parseJrnlJson(jsonStr: string): Entries {
  */
 export function parseMiniDiaryJson(jsonStr: string): Entries {
 	const parsedJson: MiniDiaryJson = JSON.parse(jsonStr);
-	const parsedEntries = Object.entries(parsedJson.entries).map(
-		([indexDate, entry]): ListDiaryEntry => ({ ...entry, indexDate }),
-	);
-	const now = createDate().toString();
-
-	return buildEntries(
-		parsedEntries,
-		(
-			parsedEntry: ImportEntry,
-		): {
-			indexDate: string;
-			entry: DiaryEntry;
-		} => {
-			const parsedEntryCast = parsedEntry as ListDiaryEntry;
-			const { indexDate, text, title } = parsedEntryCast;
-
-			// Use dateUpdated if defined, otherwise set it to now
-			let { dateUpdated } = parsedEntryCast;
-			if (!("dateUpdated" in parsedEntryCast)) {
-				dateUpdated = now;
-			}
-
-			const entry = {
-				dateUpdated,
-				title: title.trim(),
-				text: text.trim(),
-				textFormat: parsedEntryCast.textFormat || ("markdown" as const),
-				textFormatVersion: parsedEntryCast.textFormatVersion || 1,
-			};
-			return { indexDate, entry };
-		},
-	);
+	if (
+		!parsedJson.entries ||
+		typeof parsedJson.entries !== "object" ||
+		Array.isArray(parsedJson.entries)
+	)
+		throw Error("Invalid Dayleaf entries");
+	const entries: Entries = {};
+	Object.entries(parsedJson.entries).forEach(([id, entry]) => {
+		const date = entry.date || id;
+		const parsedDate = parseDate(date, "YYYY-MM-DD");
+		if (
+			!/^\d{4}-\d{2}-\d{2}$/.test(date) ||
+			!parsedDate.isValid() ||
+			toIndexDate(parsedDate) !== date ||
+			typeof entry.title !== "string" ||
+			typeof entry.text !== "string"
+		)
+			throw Error("Invalid Dayleaf entry");
+		entries[id] = {
+			...entry,
+			date,
+			dateUpdated: entry.dateUpdated || createDate().toString(),
+			textFormat: entry.textFormat || "markdown",
+			textFormatVersion: entry.textFormatVersion || 1,
+		};
+	});
+	return entries;
 }

@@ -1,3 +1,4 @@
+import { entryDate } from "../../utils/entries";
 import { Entries } from "../../types";
 import { fromIndexDate, toLocaleWeekday } from "../../utils/dateFormat";
 import { escapeMarkdownText } from "../../utils/markdown";
@@ -16,11 +17,15 @@ export function convertToMd(entries: Entries, includeMetadata = true): Promise<s
 	const sorted = sortEntries(entries);
 	sorted.forEach(([indexDate, entry], index): void => {
 		const { text, title } = entry;
-		const prefix = `## ${indexDate} · ${toLocaleWeekday(fromIndexDate(indexDate))}\n\n${
+		const date = entryDate(indexDate, entry);
+		const prefix = `## ${date} · ${toLocaleWeekday(fromIndexDate(date))}\n\n${
 			title ? `# ${escapeMarkdownText(title).replace(/\n/g, " ")}\n\n` : ""
 		}`;
 		const metadata = {
-			date: indexDate,
+			date,
+			id: indexDate,
+			dateCreated: entry.dateCreated,
+			dateUpdated: entry.dateUpdated,
 			title,
 			textFormat: entry.textFormat || "markdown",
 		};

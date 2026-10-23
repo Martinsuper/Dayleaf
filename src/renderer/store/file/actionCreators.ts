@@ -1,7 +1,9 @@
 import { flushPersistence, persist, settleDraft } from "../../utils/persistence";
+import { entryDate as getEntryDate } from "../../utils/entries";
+import { setEntrySelected } from "../diary/actionCreators";
 import mergeEntries from "../../files/import/mergeEntries";
-import { Entries, IndexDate } from "../../types";
-import { createDate } from "../../utils/dateFormat";
+import { Entries, EntryId, IndexDate } from "../../types";
+import { createDate, toIndexDate } from "../../utils/dateFormat";
 import {
 	addIndexDoc,
 	cancelIndexUpdate,
@@ -123,9 +125,9 @@ export const createEncryptedFile =
 		}
 	};
 
-function saveEntry(entryDate: IndexDate, entry: Entries[IndexDate] | null): ThunkActionT {
+function saveEntry(entryId: EntryId, entry: Entries[EntryId] | null): ThunkActionT {
 	return (): void => {
-		persist(entryDate, () => window.miniDiary.diary.save({ entry, indexDate: entryDate }));
+		persist(entryId, () => window.miniDiary.diary.save({ entry, indexDate: entryId }));
 	};
 }
 
@@ -172,45 +174,49 @@ export const updatePassword =
 	};
 
 export const updateEntry =
-	(entryDate: IndexDate, title: string, text: string): ThunkActionT =>
+	(entryId: EntryId, title: string, text: string, date: IndexDate): ThunkActionT =>
 	(dispatch, getState): void => {
 		const { entries, isUnlocked } = getState().file;
 		if (!isUnlocked) return;
 
 		const updated = { ...entries };
 		if (!title && !text) {
-			if (updated[entryDate]) {
-				cancelIndexUpdate(entryDate);
-				void removeIndexDoc(entryDate);
-				delete updated[entryDate];
+			if (updated[entryId]) {
+				cancelIndexUpdate(entryId);
+				void removeIndexDoc(entryId);
+				delete updated[entryId];
 			}
-		} else if (!updated[entryDate]) {
+		} else if (!updated[entryId]) {
 			const entry = {
+				date,
+				dateCreated: createDate().toISOString(),
 				dateUpdated: createDate().toString(),
 				title,
 				text,
 				textFormat: "markdown" as const,
 				textFormatVersion: 1,
 			};
-			updated[entryDate] = entry;
-			void addIndexDoc(entryDate, entry);
-		} else if (title !== updated[entryDate].title || text !== updated[entryDate].text) {
-			const oldEntry = updated[entryDate];
+			updated[entryId] = entry;
+			void addIndexDoc(entryId, entry);
+		} else if (title !== updated[entryId].title || text !== updated[entryId].text) {
+			const oldEntry = updated[entryId];
 			const entry = {
+				...oldEntry,
+				date,
 				dateUpdated: createDate().toString(),
 				title,
 				text,
 				textFormat: "markdown" as const,
 				textFormatVersion: 1,
 			};
-			updated[entryDate] = entry;
-			scheduleIndexUpdate(entryDate, oldEntry, entry);
+			updated[entryId] = entry;
+			scheduleIndexUpdate(entryId, oldEntry, entry);
 		} else {
 			settleDraft();
 			return;
 		}
 		dispatch(setEntries(updated));
-		dispatch(saveEntry(entryDate, updated[entryDate] || null));
+		dispatch(saveEntry(entryId, updated[entryId] || null));
 	};
 
 export const mergeUpdateFile =
@@ -221,7 +227,12 @@ export const mergeUpdateFile =
 		const conflicts = Object.keys(newEntries).filter((date) => Boolean(existing[date]));
 		const choice = conflicts.length
 			? await window.miniDiary.dialogs.importConflict(
-					conflicts,
+					conflicts.map(
+						(id) =>
+							`${getEntryDate(id, newEntries[id])} · ${
+								newEntries[id].title || newEntries[id].text.slice(0, 40)
+							}`,
+					),
 					Object.keys(newEntries).length - conflicts.length,
 			  )
 			: "replace";
@@ -235,4 +246,10 @@ export const mergeUpdateFile =
 		await dispatch(replaceEntries(entries));
 		cancelIndexUpdates();
 		await createIndex(entries);
+		const day = toIndexDate(getState().diary.dateSelected);
+		const imported = Object.entries(newEntries).filter(
+			([id, entry]) =>
+				getEntryDate(id, entry) === day && entries[id] && !(existing[id] && choice === "skip"),
+		);
+		if (imported.length) dispatch(setEntrySelected(day, imported[imported.length - 1][0]));
 	};

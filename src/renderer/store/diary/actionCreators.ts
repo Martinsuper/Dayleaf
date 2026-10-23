@@ -6,12 +6,18 @@ import { searchIndex } from "../../utils/searchIndex";
 import { ThunkActionT } from "../store";
 import {
 	SET_DATE_SELECTED,
+	SET_ENTRY_SELECTED,
+	SetEntrySelectedAction,
 	SET_SEARCH_KEY,
 	SET_SEARCH_RESULTS,
 	SetDateSelectedAction,
 	SetSearchKeyAction,
 	SetSearchResultsAction,
 } from "./types";
+
+export function setEntrySelected(date: string, id: string): SetEntrySelectedAction {
+	return { type: SET_ENTRY_SELECTED, payload: { date, id } };
+}
 
 // Action creators
 

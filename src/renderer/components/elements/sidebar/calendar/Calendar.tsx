@@ -3,6 +3,7 @@ import React, { PureComponent, ReactNode } from "react";
 import { DayPicker } from "react-day-picker";
 
 import { calendarLocale, translations } from "../../../../utils/i18n";
+import { entryDate } from "../../../../utils/entries";
 import { Entries, Weekday } from "../../../../types";
 import { createDate, parseDate } from "../../../../utils/dateFormat";
 import CalendarNavContainer from "../calendar-nav/CalendarNavContainer";
@@ -58,7 +59,9 @@ export default class Calendar extends PureComponent<Props, {}> {
 	render(): ReactNode {
 		const { allowFutureEntries, dateSelected, entries, firstDayOfWeek, setDateSelected } =
 			this.props;
-		const daysWithEntries = Object.keys(entries).map((indexDate) => parseDate(indexDate).toDate());
+		const daysWithEntries = [
+			...new Set(Object.entries(entries).map(([id, entry]) => entryDate(id, entry))),
+		].map((date) => parseDate(date).toDate());
 		return (
 			<>
 				<CalendarNavContainer />

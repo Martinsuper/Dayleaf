@@ -1,4 +1,4 @@
-import { Entries, IndexDate, DiaryEntry, Metadata } from "../renderer/types";
+import { Entries, EntryId, DiaryEntry, Metadata } from "../renderer/types";
 import { OverlayType } from "./types";
 
 export const IPC = {
@@ -63,7 +63,8 @@ export interface DiaryPayload {
 
 export interface DiaryEntryUpdate {
 	entry: DiaryEntry | null;
-	indexDate: IndexDate;
+	/** Stable article ID. The field name is retained for IPC compatibility. */
+	indexDate: EntryId;
 }
 
 export interface PreferenceValues {
