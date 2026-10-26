@@ -40,9 +40,7 @@ jobs:
 
       - name: Build macOS installer
         if: matrix.platform == 'macOS'
-        env:
-          CSC_IDENTITY_AUTO_DISCOVERY: false
-        run: yarn electron-builder --mac dmg --publish never
+        run: yarn electron-builder --config build/electron-builder.adhoc.cjs --mac dmg --publish never
 
       - name: Build Linux installers
         if: matrix.platform == 'Linux'

@@ -1,7 +1,7 @@
 {
 	"name": "dayleaf",
 	"productName": "日笺",
-	"version": "3.6.0",
+	"version": "3.6.1",
 	"description": "Dayleaf — a simple and secure personal journal",
 	"main": "./bundle/main.js",
 	"author": {
@@ -254,7 +254,7 @@
 			}
 		],
 		"afterPack": "./scripts/after-pack.js",
-		"afterSign": "electron-builder-notarize",
+		"afterSign": "./scripts/verify-mac-signature.cjs",
 		"mac": {
 			"target": [
 				"dmg",
@@ -299,7 +299,8 @@
 			],
 			"entitlements": "./build/entitlements.mac.plist",
 			"entitlementsInherit": "./build/entitlements.mac.plist",
-			"hardenedRuntime": true
+			"hardenedRuntime": true,
+			"notarize": true
 		},
 		"mas": {
 			"entitlements": "./build/entitlements.mas.plist",
