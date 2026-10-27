@@ -1,5 +1,21 @@
 # macOS 签名与公证
 
+## 2026-10-27：启动即崩溃（DYLD / different Team IDs）
+
+3.6.0 的崩溃日志显示主程序无法加载 Electron Framework：`mapping process and mapped file (non-platform) have different Team IDs`。本机同样复现：ad-hoc 包通过 `codesign --verify --deep --strict`，但启用了 Hardened Runtime，其 library validation 在没有 Team ID 的情况下拒绝加载框架。
+
+ad-hoc 配置现在显式设置 `hardenedRuntime: false`，签名检查同时验证主程序和 Electron Framework 均为 ad-hoc 且没有 runtime 标志。Developer ID 正式分发仍使用 Hardened Runtime 和公证。
+
+构建并在匹配架构的 Mac 上验证真实启动（测试使用临时用户目录，不读写个人日记）：
+
+```sh
+yarn build:ts
+yarn electron-builder --config build/electron-builder.adhoc.cjs --mac dmg --arm64 --publish never -c.directories.output=dist/fixed
+node scripts/smoke-mac.cjs dist/fixed/mac-arm64/Dayleaf.app
+```
+
+还应挂载 DMG，将其中的应用复制到测试目录，再运行同一启动检查。Intel CI 交叉构建 ARM64 时不能执行该 ARM64 程序，必须在 ARM64 Mac 上完成启动验收。ad-hoc 包没有 Apple 公证，下载后的 Gatekeeper 首次打开限制仍然存在；正式公开分发应使用上文所述 Developer ID 签名与公证流程。
+
 ## 本次问题
 
 检查本地 `dist/mac-arm64/Dayleaf.app`（3.5.0）发现签名使用 `Apple Development`，不是面向站外分发的 `Developer ID Application`；Gatekeeper 检查返回 `CSSMERR_TP_CERT_REVOKED`。这是证书信任错误，不能据此判断应用文件已损坏，也不能把本次提示当作恶意软件检测结论。

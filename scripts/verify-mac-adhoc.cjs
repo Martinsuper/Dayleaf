@@ -17,5 +17,15 @@ module.exports = context => {
 	execFileSync('codesign', ['--verify', '--deep', '--strict', '--verbose=2', app], {
 		stdio: 'inherit',
 	});
+	const framework = path.join(app, 'Contents/Frameworks/Electron Framework.framework');
+	for (const binary of [app, framework]) {
+		const details = spawnSync('codesign', ['-d', '--verbose=4', binary], {
+			encoding: 'utf8',
+		});
+		if (details.status !== 0 || !/^Signature=adhoc$/m.test(details.stderr || '') ||
+			/^CodeDirectory .*flags=.*\bruntime\b/m.test(details.stderr || '')) {
+			throw new Error(`Ad-hoc binary must be signed without hardened runtime: ${binary}`);
+		}
+	}
 	// Gatekeeper trust rejection is expected for ad-hoc; it is not an integrity check.
 };
