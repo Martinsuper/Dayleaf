@@ -1,7 +1,7 @@
 {
 	"name": "dayleaf",
 	"productName": "日笺",
-	"version": "3.6.1",
+	"version": "3.6.2",
 	"description": "Dayleaf — a simple and secure personal journal",
 	"main": "./bundle/main.js",
 	"author": {

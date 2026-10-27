@@ -34,6 +34,8 @@ yarn electron-builder --config build/electron-builder.release.cjs --mac dmg --pu
 
 ## 无开发者账号的 ad-hoc 发布（当前默认）
 
+CI 使用 `macos-15-intel`，并显式传入 `--arm64` 交叉构建 Apple Silicon 安装包，避免依赖容量不足的 macOS ARM64 runner 池。安装包目标架构不随 runner 架构改变。
+
 参考：[免开发者账号发布 macOS 应用](https://fblog.younote.top/posts/read/?id=d0d1d323-f65c-4680-9dfc-9c0ed6f0975a)。
 
 标签发布工作流改用 `build/electron-builder.adhoc.cjs`：显式设置 `identity: '-'`，不使用本机证书、不提交 Apple 公证。Electron 的嵌套框架及辅助程序由 electron-builder 逐层签名，保留 Electron 所需的 entitlements。`afterSign` 必须确认 `Signature=adhoc`、无证书 Authority，并通过 `codesign --verify --deep --strict`；失败立即停止打包。仅上传打包好的 DMG，避免上传裸 `.app` 造成权限或符号链接丢失。

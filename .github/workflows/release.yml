@@ -17,7 +17,8 @@ jobs:
       matrix:
         include:
           - platform: macOS
-            os: macos-latest
+            # Use the Intel pool to avoid ARM64 hosted-runner capacity failures.
+            os: macos-15-intel
           - platform: Linux
             os: ubuntu-latest
           - platform: Windows
@@ -40,7 +41,7 @@ jobs:
 
       - name: Build macOS installer
         if: matrix.platform == 'macOS'
-        run: yarn electron-builder --config build/electron-builder.adhoc.cjs --mac dmg --publish never
+        run: yarn electron-builder --config build/electron-builder.adhoc.cjs --mac dmg --arm64 --publish never
 
       - name: Build Linux installers
         if: matrix.platform == 'Linux'
